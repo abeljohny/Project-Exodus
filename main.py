@@ -1,5 +1,7 @@
 import pygame, sys
 from pygame.locals import *
+import collections
+from enum import Enum
 
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
@@ -12,48 +14,50 @@ CLOCK = pygame.time.Clock()
 FPS = 12
 
 
-class ExoSpritesheet:
-    def __init__(self, filename, cols):
-        self.sheet = pygame.image.load(filename).convert_alpha()
-        self.indx = 0
-        self.cols = cols
-        self.rect = self.sheet.get_rect()
-        self.frames = []
-        # issue: self.frames having only first frame??!!
+class State(Enum):
+    IDLE = 1
+    WALKING = 2
+    JUMPING = 3
+
+
+class Player:
+    def __init__(self, playerName):
+        self.state = State.IDLE
+        self.playerName = playerName
+        self.__position = {'x': 0, 'y': 0}
+        self.current_frame = 0
+        self.frames = collections.defaultdict(list)
+        self.spritesheet = None
+
+    def add_state(self, filename, cols, state):
+        self.spritesheet = pygame.image.load(filename).convert_alpha()
+        rect = self.spritesheet.get_rect()
         for i in range(cols):
-            self.frames.append(self.sheet.subsurface(pygame.Rect(i * 50, 0, RYU_WIDTH, RYU_HEIGHT)))
-            print(i * 50)
-        # self.cellWidth = int(self.rect.width / cols)
-        # self.cellHeight = int(self.rect.height)
-        # self.cells = list([(index % cols * self.cellWidth, index / cols * self.cellHeight) for index in range(cols)])
+            self.frames[state].append(self.spritesheet.subsurface(pygame.Rect(i * 50, 0, RYU_WIDTH, RYU_HEIGHT)))
 
-    def draw(self, surface):
-        # pass
-        surface.fill(WHITE)
-        surface.blit(self.frames[self.indx], (0, 0))
+    def load_state(self, state, surface):
+        self.state = state
+        # self.current_frame = 0
+        self.draw(self.state, surface, self.__position)
 
-        if self.indx == self.cols - 1:
-            self.indx = 0
+    def draw(self, state, surface, position):
+        l = len(self.frames[state])
+        surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
+
+        if self.current_frame == l - 1:
+            self.current_frame = 0
         else:
-            self.indx = self.indx + 1
+            self.current_frame = self.current_frame + 1
 
-        # surface.blit(self.sheet, (50, 0), area=(51, 0, RYU_WIDTH, RYU_HEIGHT))
-        # surface.blit(self.sheet, (100, 0), area=(102, 0, RYU_WIDTH, RYU_HEIGHT))
-        # surface.blit(self.sheet, (150, 0), area=(153, 0, RYU_WIDTH, RYU_HEIGHT))
+    @property
+    def position(self):
+        return self.__position
 
+    @position.setter
+    def position(self, position):
+        self.__position['x'] = position['x']
+        self.__position['y'] = position['y']
 
-# def draw_background(screen):
-#     road_img = pygame.image.load("Assets/asphalt.png").convert_alpha()
-#     road_img = pygame.transform.scale(road_img, (480, 400)) # scale & rotate(90) this motherfucker
-#     road_img = pygame.transform.rotate(road_img, DEG_90)
-#     road_img_rect = road_img.get_rect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT - 100))
-#     # that's right BLIT this fucker!!!!!!!!!!!!!!
-#     screen.blit(road_img, road_img_rect)
-#     tree_img = pygame.image.load("Assets/trees.png").convert_alpha()
-#     # tree_img = pygame.transform.rotate(tree_img, DEG_90)
-#     tree_img_rect = tree_img.get_rect(center=(WINDOW_WIDTH/2-420, WINDOW_HEIGHT - 260))
-#     tree_img = pygame.transform.scale(tree_img, (380, 350))
-#     screen.blit(tree_img, tree_img_rect)
 
 def exit():
     print('-----------------------------')
@@ -68,40 +72,31 @@ def main():
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     display_surface.fill(WHITE)
     pygame.display.set_caption('Project Exodus')
-
-    ryu_idle = ExoSpritesheet('Assets/ryu-idle.png', COLS_IDLE)
-    # ryu_walking = ExoSpritesheet('Assets/ryu-walking.png', COLS_WALK)
+    position = {'x': 100, 'y': 100}
+    ryu = Player('Ryu')
+    ryu.add_state('Assets/ryu-idle.png', COLS_IDLE, State.IDLE)
+    ryu.position = {'x': 50, 'y': 50}
+    current_state = State.IDLE
 
     while True:
         for event in pygame.event.get():
             if event.type == KEYUP:
+                current_state = State.IDLE
                 if event.key == K_ESCAPE:
                     exit()
+            elif event.type == KEYDOWN:
+                if event.key == K_d:
+                    current_state = State.WALKING
+                    position['x'] += 5
+                    ryu.position = position
             elif event.type == QUIT:
                 exit()
 
-        ryu_idle.draw(display_surface)
-        # ryu_walking.draw(display_surface)
+        ryu.load_state(current_state, display_surface)
+
         pygame.display.update()
+        display_surface.fill(WHITE)
         CLOCK.tick(FPS)
-
-
-
-
-
-    # draw_background(DISPLAY)
-    # ss = spritesheet("Assets/ryu-idle.png")
-    # # image = ss.image_at(0, 0, 50, 105)
-    # images = []
-    # images = ss.images_at((0, 0, 50, 105), (0, 0, 100, 105), colorkey=(255, 255, 255))
-    #
-    # while True:
-    #     for event in pygame.event.get():
-    #         if event.type == QUIT:
-    #             pygame.quit()
-    #             sys.exit()
-    #     pygame.display.update()
-
 
 if __name__ == "__main__":
     main()
