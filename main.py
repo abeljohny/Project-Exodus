@@ -20,6 +20,17 @@ class State(Enum):
     JUMPING = 3
 
 
+class Logger:
+    def __init__(self, filename):
+        self.file_handler = open(filename, 'w', encoding="utf8")
+
+    def log(self, desc, *args):
+        self.file_handler.write("{0}".format(desc + ' ' + (''.join(str(args)) if args else '') + '\n'))
+
+    def exit(self):
+        self.file_handler.close()
+
+
 class Player:
     def __init__(self, playerName):
         self.state = State.IDLE
@@ -41,10 +52,10 @@ class Player:
         self.draw(self.state, surface, self.__position)
 
     def draw(self, state, surface, position):
-        l = len(self.frames[state])
+        frame_length = len(self.frames[state])
         surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
 
-        if self.current_frame == l - 1:
+        if self.current_frame >= frame_length - 1:
             self.current_frame = 0
         else:
             self.current_frame = self.current_frame + 1
@@ -59,22 +70,25 @@ class Player:
         self.__position['y'] = position['y']
 
 
-def exit():
-    print('-----------------------------')
-    print('Shutting down systems: exit(0)')
-    print('-----------------------------')
+def exit(logger=None):
+    logger.exit()
     pygame.quit()
     sys.exit()
 
 
 def main():
+    game_logger = Logger('exodus_log')
     pygame.init()
+    game_logger.log("Pygame Initialization: OK")
+
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    display_surface.fill(WHITE)
+    game_logger.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
+
     pygame.display.set_caption('Project Exodus')
-    position = {'x': 100, 'y': 100}
+    position = {'x': 50, 'y': 50}
     ryu = Player('Ryu')
     ryu.add_state('Assets/ryu-idle.png', COLS_IDLE, State.IDLE)
+    ryu.add_state('Assets/ryu-walking.png', COLS_WALK, State.WALKING)
     ryu.position = {'x': 50, 'y': 50}
     current_state = State.IDLE
 
@@ -83,14 +97,15 @@ def main():
             if event.type == KEYUP:
                 current_state = State.IDLE
                 if event.key == K_ESCAPE:
-                    exit()
+                    exit(game_logger)
             elif event.type == KEYDOWN:
                 if event.key == K_d:
                     current_state = State.WALKING
-                    position['x'] += 5
+                    position['x'] = position['x'] + 5
                     ryu.position = position
+                    print(position['x'], position['y'])
             elif event.type == QUIT:
-                exit()
+                exit(game_logger)
 
         ryu.load_state(current_state, display_surface)
 
