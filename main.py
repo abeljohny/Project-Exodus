@@ -2,19 +2,26 @@ import pygame, sys
 from pygame.locals import *
 import collections
 from enum import Enum
+import copy
 
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 WHITE = (255, 255, 255)
 RYU_WIDTH = 50
 RYU_HEIGHT = 105
+
 FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
 FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
+FRAMELENGTH_PROJECTILE = [40]
+FRAMESTART_PROJECTILE = [0]
+
 COLS_IDLE = 4
 COLS_WALK = 5
 COLS_HADOUKEN = 5
+COLS_PROJECTILE = 1
+
 CLOCK = pygame.time.Clock()
-FPS = 10
+FPS = 12
 GAME_LOGGER = None
 
 
@@ -22,6 +29,7 @@ class State(Enum):
     IDLE = 1
     WALKING = 2
     HADOUKEN = 3
+    PROJECTILE = 4
 
 
 class Logger:
@@ -38,6 +46,7 @@ class Logger:
 class Player:
     def __init__(self, playerName):
         self.state = State.IDLE
+        self.projectiles = []
         self.playerName = playerName
         self.__position = {'x': 0, 'y': 0}
         self.current_frame = 0
@@ -47,10 +56,12 @@ class Player:
     def add_state(self, filename, cols, state, framestart_buffer=None, framelength_buffer=None):
         self.spritesheet = pygame.image.load(filename).convert_alpha()
         rect = self.spritesheet.get_rect()
-        if framelength_buffer is None:
+        if framelength_buffer is None and framestart_buffer is None:
             for i in range(cols):
                 self.frames[state].append(self.spritesheet.subsurface(pygame.Rect(i * 50, 0, RYU_WIDTH, RYU_HEIGHT)))
-        elif state == State.HADOUKEN:
+        else:
+            if framestart_buffer is None or framelength_buffer is None:
+                exit("Frame start & Frame length buffers need to provided")
             for i in range(cols):
                 self.frames[state].append(self.spritesheet.subsurface(pygame.Rect(framestart_buffer[i], 0,
                                                                                   framelength_buffer[i], RYU_HEIGHT)))
@@ -58,14 +69,15 @@ class Player:
                                      " Filename: " + filename))
 
     def load_state(self, state, surface):
+        # l_position = None
         # start hadouken always from frame #1
         if self.state == State.HADOUKEN and self.current_frame > 0:
             self.state = State.HADOUKEN
         elif self.state != state:
             self.current_frame = 0
+            if self.state == State.HADOUKEN:
+                self.projectiles.append(copy.copy(self.__position))
             self.state = state
-
-        # self.current_frame = 0
         self.draw(self.state, surface, self.__position)
         GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Loaded state " + repr(state)))
 
@@ -75,8 +87,11 @@ class Player:
             self.current_frame = 0
         else:
             self.current_frame = self.current_frame + 1
-
         surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
+        # update mf blasts
+        for indx, pos in enumerate(self.projectiles):
+            self.projectiles[indx]['x'] += 30
+            surface.blit(self.frames[State.PROJECTILE][0], (self.projectiles[indx]['x'], self.projectiles[indx]['y']))
 
 
     @property
@@ -89,7 +104,9 @@ class Player:
         self.__position['y'] = position['y']
 
 
-def exit(logger=None):
+def exit(text, logger=None):
+    if logger:
+        logger.log(text)
     logger.exit()
     pygame.quit()
     sys.exit()
@@ -111,6 +128,7 @@ def main():
     ryu.add_state('Assets/ryu-idle.png', COLS_IDLE, State.IDLE)
     ryu.add_state('Assets/ryu-walking.png', COLS_WALK, State.WALKING)
     ryu.add_state('Assets/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
+    ryu.add_state('Assets/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
     ryu.position = {'x': 50, 'y': 50}
 
     while True:
@@ -146,7 +164,7 @@ def main():
                     current_state = State.HADOUKEN
 
             elif event.type == QUIT:
-                exit(GAME_LOGGER)
+                exit("Pressed X", GAME_LOGGER)
 
         ryu.load_state(current_state, display_surface)
 
