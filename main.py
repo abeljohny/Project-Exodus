@@ -8,16 +8,20 @@ WINDOW_HEIGHT = 480
 WHITE = (255, 255, 255)
 RYU_WIDTH = 50
 RYU_HEIGHT = 105
+FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
+FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
 COLS_IDLE = 4
 COLS_WALK = 5
+COLS_HADOUKEN = 5
 CLOCK = pygame.time.Clock()
-FPS = 12
+FPS = 10
+GAME_LOGGER = None
 
 
 class State(Enum):
     IDLE = 1
     WALKING = 2
-    JUMPING = 3
+    HADOUKEN = 3
 
 
 class Logger:
@@ -25,7 +29,7 @@ class Logger:
         self.file_handler = open(filename, 'w', encoding="utf8")
 
     def log(self, desc, *args):
-        self.file_handler.write("{0}".format(desc + ' ' + (''.join(str(args)) if args else '') + '\n'))
+        self.file_handler.write("{0}".format(desc + ' ' + (''.join(repr(args)) if args else '') + '\n'))
 
     def exit(self):
         self.file_handler.close()
@@ -40,25 +44,40 @@ class Player:
         self.frames = collections.defaultdict(list)
         self.spritesheet = None
 
-    def add_state(self, filename, cols, state):
+    def add_state(self, filename, cols, state, framestart_buffer=None, framelength_buffer=None):
         self.spritesheet = pygame.image.load(filename).convert_alpha()
         rect = self.spritesheet.get_rect()
-        for i in range(cols):
-            self.frames[state].append(self.spritesheet.subsurface(pygame.Rect(i * 50, 0, RYU_WIDTH, RYU_HEIGHT)))
+        if framelength_buffer is None:
+            for i in range(cols):
+                self.frames[state].append(self.spritesheet.subsurface(pygame.Rect(i * 50, 0, RYU_WIDTH, RYU_HEIGHT)))
+        elif state == State.HADOUKEN:
+            for i in range(cols):
+                self.frames[state].append(self.spritesheet.subsurface(pygame.Rect(framestart_buffer[i], 0,
+                                                                                  framelength_buffer[i], RYU_HEIGHT)))
+        GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Added state " + repr(state) +
+                                     " Filename: " + filename))
 
     def load_state(self, state, surface):
-        self.state = state
+        # start hadouken always from frame #1
+        if self.state == State.HADOUKEN and self.current_frame > 0:
+            self.state = State.HADOUKEN
+        elif self.state != state:
+            self.current_frame = 0
+            self.state = state
+
         # self.current_frame = 0
         self.draw(self.state, surface, self.__position)
+        GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Loaded state " + repr(state)))
 
     def draw(self, state, surface, position):
         frame_length = len(self.frames[state])
-        surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
-
         if self.current_frame >= frame_length - 1:
             self.current_frame = 0
         else:
             self.current_frame = self.current_frame + 1
+
+        surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
+
 
     @property
     def position(self):
@@ -77,35 +96,57 @@ def exit(logger=None):
 
 
 def main():
-    game_logger = Logger('exodus_log')
+    global GAME_LOGGER
+    GAME_LOGGER = Logger('exodus_log')
     pygame.init()
-    game_logger.log("Pygame Initialization: OK")
+    GAME_LOGGER.log("Pygame Initialization: OK")
 
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    game_logger.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
-
     pygame.display.set_caption('Project Exodus')
+    GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
+
     position = {'x': 50, 'y': 50}
+    current_state = State.IDLE
     ryu = Player('Ryu')
     ryu.add_state('Assets/ryu-idle.png', COLS_IDLE, State.IDLE)
     ryu.add_state('Assets/ryu-walking.png', COLS_WALK, State.WALKING)
+    ryu.add_state('Assets/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
     ryu.position = {'x': 50, 'y': 50}
-    current_state = State.IDLE
 
     while True:
+        keys = pygame.key.get_pressed()
+        if keys[K_d]:
+            current_state = State.WALKING
+            if position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
+                position['x'] = position['x'] + 25
+            ryu.position = position
+            GAME_LOGGER.log("{0}".format('K_d::' + repr(position)))
+        elif keys[K_a]:
+            current_state = State.WALKING
+            if position['x'] > 0:
+                position['x'] = position['x'] - 25
+            ryu.position = position
+            GAME_LOGGER.log("{0}".format('K_a::' + repr(position)))
+
         for event in pygame.event.get():
             if event.type == KEYUP:
                 current_state = State.IDLE
-                if event.key == K_ESCAPE:
-                    exit(game_logger)
             elif event.type == KEYDOWN:
                 if event.key == K_d:
                     current_state = State.WALKING
-                    position['x'] = position['x'] + 5
+                    if position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
+                        position['x'] = position['x'] + 25
                     ryu.position = position
-                    print(position['x'], position['y'])
+                elif event.key == K_a:
+                    current_state = State.WALKING
+                    if position['x'] > 0:
+                        position['x'] = position['x'] - 25
+                    ryu.position = position
+                elif event.key == K_SPACE:
+                    current_state = State.HADOUKEN
+
             elif event.type == QUIT:
-                exit(game_logger)
+                exit(GAME_LOGGER)
 
         ryu.load_state(current_state, display_surface)
 
