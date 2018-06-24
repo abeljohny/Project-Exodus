@@ -33,6 +33,15 @@ class State(Enum):
     PROJECTILE = 4
 
 
+class ENLIFE(Enum):
+    FULL = 1
+    HALF = 2
+    DEAD = 3
+    FULL_RECT = 4
+    HALF_RECT = 5
+    DEAD_RECT = 6
+
+
 class Logger:
     def __init__(self, filename):
         self.file_handler = open(filename, 'w', encoding="utf8")
@@ -136,8 +145,15 @@ def main():
     background_frame = 0
     background = collections.defaultdict(list)
     for file in os.listdir('./Assets/bg_frames'):
-        background['bg'].append(pygame.image.load('./Assets/bg_frames/' + file))
-        background['rect'].append(background['bg'][-1].get_rect())
+        background['img'].append(pygame.image.load('./Assets/bg_frames/' + file))
+        background['rect'].append(background['img'][-1].get_rect())
+
+    # load enemy frames
+    # ordering for en_frames paramount
+    enemy = collections.defaultdict()
+    for file in os.listdir('./Assets/en_frames'):
+        enemy[ENLIFE(int(file[1]))] = pygame.image.load('./Assets/en_frames/' + file)
+        enemy[ENLIFE(int(file[1])+ 3)] = enemy[ENLIFE(int(file[1]))].get_rect()
 
     while True:
         keys = pygame.key.get_pressed()
@@ -167,8 +183,8 @@ def main():
         ryu.load_state(current_state, display_surface)
 
         pygame.display.update()
-        display_surface.fill(WHITE)
-        display_surface.blit(background['bg'][background_frame], background['rect'][background_frame])
+        # display_surface.fill(WHITE)
+        display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
         background_frame += 1
         if background_frame >= BACKGROUND_FRAMES:
             background_frame = 0
