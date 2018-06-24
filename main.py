@@ -73,10 +73,12 @@ class Player:
         # start hadouken always from frame #1
         if self.state == State.HADOUKEN and self.current_frame > 0:
             self.state = State.HADOUKEN
+            if self.current_frame == len(self.frames[State.HADOUKEN]) - 1:
+                self.projectiles.append(copy.copy(self.__position))
         elif self.state != state:
             self.current_frame = 0
-            if self.state == State.HADOUKEN:
-                self.projectiles.append(copy.copy(self.__position))
+            # if self.state == State.HADOUKEN:
+
             self.state = state
         self.draw(self.state, surface, self.__position)
         GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Loaded state " + repr(state)))
@@ -90,8 +92,11 @@ class Player:
         surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
         # update mf blasts
         for indx, pos in enumerate(self.projectiles):
-            self.projectiles[indx]['x'] += 30
-            surface.blit(self.frames[State.PROJECTILE][0], (self.projectiles[indx]['x'], self.projectiles[indx]['y']))
+            if self.projectiles[indx]['x'] > (WINDOW_WIDTH - 40):
+                del self.projectiles[indx]
+            else:
+                self.projectiles[indx]['x'] += 70
+                surface.blit(self.frames[State.PROJECTILE][0], (self.projectiles[indx]['x'], self.projectiles[indx]['y']))
 
 
     @property
@@ -150,17 +155,17 @@ def main():
             if event.type == KEYUP:
                 current_state = State.IDLE
             elif event.type == KEYDOWN:
-                if event.key == K_d:
-                    current_state = State.WALKING
-                    if position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
-                        position['x'] = position['x'] + 25
-                    ryu.position = position
-                elif event.key == K_a:
-                    current_state = State.WALKING
-                    if position['x'] > 0:
-                        position['x'] = position['x'] - 25
-                    ryu.position = position
-                elif event.key == K_SPACE:
+                # if event.key == K_d:
+                #     current_state = State.WALKING
+                #     if position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
+                #         position['x'] = position['x'] + 25
+                #     ryu.position = position
+                # elif event.key == K_a:
+                #     current_state = State.WALKING
+                #     if position['x'] > 0:
+                #         position['x'] = position['x'] - 25
+                #     ryu.position = position
+                if event.key == K_SPACE:
                     current_state = State.HADOUKEN
 
             elif event.type == QUIT:
