@@ -158,16 +158,6 @@ def main():
             if event.type == KEYUP:
                 current_state = State.IDLE
             elif event.type == KEYDOWN:
-                # if event.key == K_d:
-                #     current_state = State.WALKING
-                #     if position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
-                #         position['x'] = position['x'] + 25
-                #     ryu.position = position
-                # elif event.key == K_a:
-                #     current_state = State.WALKING
-                #     if position['x'] > 0:
-                #         position['x'] = position['x'] - 25
-                #     ryu.position = position
                 if event.key == K_SPACE:
                     current_state = State.HADOUKEN
 
