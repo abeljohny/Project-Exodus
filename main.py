@@ -1,11 +1,11 @@
-import pygame, sys
+import pygame, sys, os
 from pygame.locals import *
 import collections
 from enum import Enum
 import copy
 
 WINDOW_WIDTH = 640
-WINDOW_HEIGHT = 480
+WINDOW_HEIGHT = 368
 WHITE = (255, 255, 255)
 RYU_WIDTH = 50
 RYU_HEIGHT = 105
@@ -22,6 +22,7 @@ COLS_PROJECTILE = 1
 
 CLOCK = pygame.time.Clock()
 FPS = 12
+BACKGROUND_FRAMES = 8
 GAME_LOGGER = None
 
 
@@ -69,7 +70,6 @@ class Player:
                                      " Filename: " + filename))
 
     def load_state(self, state, surface):
-        # l_position = None
         # start hadouken always from frame #1
         if self.state == State.HADOUKEN and self.current_frame > 0:
             self.state = State.HADOUKEN
@@ -77,8 +77,6 @@ class Player:
                 self.projectiles.append(copy.copy(self.__position))
         elif self.state != state:
             self.current_frame = 0
-            # if self.state == State.HADOUKEN:
-
             self.state = state
         self.draw(self.state, surface, self.__position)
         GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Loaded state " + repr(state)))
@@ -92,12 +90,11 @@ class Player:
         surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
         # update mf blasts
         for indx, pos in enumerate(self.projectiles):
-            if self.projectiles[indx]['x'] > (WINDOW_WIDTH - 40):
+            if self.projectiles[indx]['x'] > (WINDOW_WIDTH - FRAMELENGTH_PROJECTILE[0]):
                 del self.projectiles[indx]
             else:
                 self.projectiles[indx]['x'] += 70
                 surface.blit(self.frames[State.PROJECTILE][0], (self.projectiles[indx]['x'], self.projectiles[indx]['y']))
-
 
     @property
     def position(self):
@@ -127,29 +124,35 @@ def main():
     pygame.display.set_caption('Project Exodus')
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
 
-    position = {'x': 50, 'y': 50}
     current_state = State.IDLE
     ryu = Player('Ryu')
     ryu.add_state('Assets/ryu-idle.png', COLS_IDLE, State.IDLE)
     ryu.add_state('Assets/ryu-walking.png', COLS_WALK, State.WALKING)
     ryu.add_state('Assets/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
     ryu.add_state('Assets/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
-    ryu.position = {'x': 50, 'y': 50}
+    ryu.position = {'x': 50, 'y': 250}
+
+    # load background frames
+    background_frame = 0
+    background = collections.defaultdict(list)
+    for file in os.listdir('./Assets/bg_frames'):
+        background['bg'].append(pygame.image.load('./Assets/bg_frames/' + file))
+        background['rect'].append(background['bg'][-1].get_rect())
 
     while True:
         keys = pygame.key.get_pressed()
         if keys[K_d]:
             current_state = State.WALKING
-            if position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
-                position['x'] = position['x'] + 25
-            ryu.position = position
-            GAME_LOGGER.log("{0}".format('K_d::' + repr(position)))
+            if ryu.position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
+                ryu.position['x'] = ryu.position['x'] + 25
+            ryu.position = ryu.position
+            GAME_LOGGER.log("{0}".format('K_d::' + repr(ryu.position)))
         elif keys[K_a]:
             current_state = State.WALKING
-            if position['x'] > 0:
-                position['x'] = position['x'] - 25
-            ryu.position = position
-            GAME_LOGGER.log("{0}".format('K_a::' + repr(position)))
+            if ryu.position['x'] > 0:
+                ryu.position['x'] = ryu.position['x'] - 25
+            ryu.position = ryu.position
+            GAME_LOGGER.log("{0}".format('K_a::' + repr(ryu.position)))
 
         for event in pygame.event.get():
             if event.type == KEYUP:
@@ -175,6 +178,10 @@ def main():
 
         pygame.display.update()
         display_surface.fill(WHITE)
+        display_surface.blit(background['bg'][background_frame], background['rect'][background_frame])
+        background_frame += 1
+        if background_frame >= BACKGROUND_FRAMES:
+            background_frame = 0
         CLOCK.tick(FPS)
 
 if __name__ == "__main__":
