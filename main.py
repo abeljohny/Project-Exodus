@@ -1,7 +1,7 @@
 import pygame, sys, os
 from pygame.locals import *
 import collections
-from enum import Enum
+from enum import Enum, IntEnum
 import copy
 
 WINDOW_WIDTH = 640
@@ -9,6 +9,8 @@ WINDOW_HEIGHT = 368
 WHITE = (255, 255, 255)
 RYU_WIDTH = 50
 RYU_HEIGHT = 105
+POSITION = collections.namedtuple('POSITION', ['x', 'y'])
+ENEMY_POSITION = POSITION(x=500, y=215)
 
 FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
 FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
@@ -31,15 +33,18 @@ class State(Enum):
     WALKING = 2
     HADOUKEN = 3
     PROJECTILE = 4
+    PROJECTILE_COMP = 5
 
 
-class ENLIFE(Enum):
+class ENLIFE(IntEnum):
     FULL = 1
-    HALF = 2
-    DEAD = 3
-    FULL_RECT = 4
-    HALF_RECT = 5
-    DEAD_RECT = 6
+    QUARTER = 2
+    HALF = 3
+    DEAD = 4
+    FULL_RECT = 5
+    QUARTER_RECT = 6
+    HALF_RECT = 7
+    DEAD_RECT = 8
 
 
 class Logger:
@@ -99,7 +104,8 @@ class Player:
         surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
         # update mf blasts
         for indx, pos in enumerate(self.projectiles):
-            if self.projectiles[indx]['x'] > (WINDOW_WIDTH - FRAMELENGTH_PROJECTILE[0]):
+            if self.projectiles[indx]['x'] > ( ENEMY_POSITION.x - 50 ): # (WINDOW_WIDTH - FRAMELENGTH_PROJECTILE[0]):
+                surface.blit(self.frames[State.PROJECTILE_COMP][0], (ENEMY_POSITION.x - 50, self.__position['y']))
                 del self.projectiles[indx]
             else:
                 self.projectiles[indx]['x'] += 70
@@ -139,6 +145,7 @@ def main():
     ryu.add_state('Assets/ryu-walking.png', COLS_WALK, State.WALKING)
     ryu.add_state('Assets/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
     ryu.add_state('Assets/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    ryu.add_state('Assets/mf-blast-comp.png', COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
     ryu.position = {'x': 50, 'y': 250}
 
     # load background frames
@@ -154,12 +161,13 @@ def main():
     for file in os.listdir('./Assets/en_frames'):
         enemy[ENLIFE(int(file[1]))] = pygame.image.load('./Assets/en_frames/' + file)
         enemy[ENLIFE(int(file[1])+ 3)] = enemy[ENLIFE(int(file[1]))].get_rect()
+    enemy_state = ENLIFE.FULL
 
     while True:
         keys = pygame.key.get_pressed()
         if keys[K_d]:
             current_state = State.WALKING
-            if ryu.position['x'] < (WINDOW_WIDTH - RYU_WIDTH):
+            if ryu.position['x'] < (ENEMY_POSITION.x - 50):
                 ryu.position['x'] = ryu.position['x'] + 25
             ryu.position = ryu.position
             GAME_LOGGER.log("{0}".format('K_d::' + repr(ryu.position)))
@@ -176,14 +184,16 @@ def main():
             elif event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     current_state = State.HADOUKEN
-
             elif event.type == QUIT:
                 exit("Pressed X", GAME_LOGGER)
 
         ryu.load_state(current_state, display_surface)
+        display_surface.blit(enemy[enemy_state], ENEMY_POSITION)
 
         pygame.display.update()
         # display_surface.fill(WHITE)
+        # draw enemy
+        # draw background
         display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
         background_frame += 1
         if background_frame >= BACKGROUND_FRAMES:
