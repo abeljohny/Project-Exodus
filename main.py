@@ -9,8 +9,10 @@ WINDOW_HEIGHT = 368
 WHITE = (255, 255, 255)
 RYU_WIDTH = 50
 RYU_HEIGHT = 105
+
 POSITION = collections.namedtuple('POSITION', ['x', 'y'])
 ENEMY_POSITION = POSITION(x=500, y=215)
+ENEMY_HEALTH = 800
 
 FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
 FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
@@ -96,17 +98,19 @@ class Player:
         GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Loaded state " + repr(state)))
 
     def draw(self, state, surface, position):
+        global ENEMY_HEALTH
         frame_length = len(self.frames[state])
         if self.current_frame >= frame_length - 1:
             self.current_frame = 0
         else:
             self.current_frame = self.current_frame + 1
         surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
-        # update mf blasts
+        # draw mf blasts
         for indx, pos in enumerate(self.projectiles):
             if self.projectiles[indx]['x'] > ( ENEMY_POSITION.x - 50 ): # (WINDOW_WIDTH - FRAMELENGTH_PROJECTILE[0]):
                 surface.blit(self.frames[State.PROJECTILE_COMP][0], (ENEMY_POSITION.x - 50, self.__position['y']))
                 del self.projectiles[indx]
+                ENEMY_HEALTH -= 50
             else:
                 self.projectiles[indx]['x'] += 70
                 surface.blit(self.frames[State.PROJECTILE][0], (self.projectiles[indx]['x'], self.projectiles[indx]['y']))
@@ -130,7 +134,7 @@ def exit(text, logger=None):
 
 
 def main():
-    global GAME_LOGGER
+    global GAME_LOGGER, FPS
     GAME_LOGGER = Logger('exodus_log')
     pygame.init()
     GAME_LOGGER.log("Pygame Initialization: OK")
@@ -188,16 +192,27 @@ def main():
                 exit("Pressed X", GAME_LOGGER)
 
         ryu.load_state(current_state, display_surface)
+
+        if ENEMY_HEALTH == 750:
+            enemy_state = ENLIFE.QUARTER
+        elif ENEMY_HEALTH == 500:
+            enemy_state = ENLIFE.HALF
+        elif ENEMY_HEALTH == 100:
+            enemy_state = ENLIFE.DEAD
+
         display_surface.blit(enemy[enemy_state], ENEMY_POSITION)
 
         pygame.display.update()
         # display_surface.fill(WHITE)
-        # draw enemy
-        # draw background
-        display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
-        background_frame += 1
-        if background_frame >= BACKGROUND_FRAMES:
-            background_frame = 0
+        # draw enemy & background
+        if ENEMY_HEALTH > 100:
+            display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
+            background_frame += 1
+            if background_frame >= BACKGROUND_FRAMES:
+                background_frame = 0
+        else:
+            FPS = 4
+
         CLOCK.tick(FPS)
 
 if __name__ == "__main__":
