@@ -1,3 +1,4 @@
+from moviepy.editor import *
 import pygame, sys, time, random, os
 from pygame.locals import *
 import collections
@@ -10,6 +11,10 @@ WHITE = (255, 255, 255)
 RYU_WIDTH = 50
 RYU_HEIGHT = 105
 
+FPS = 12
+KABALI = 4
+GAME_OVER = False
+
 POSITION = collections.namedtuple('POSITION', ['x', 'y'])
 START_POSITION = POSITION(x=50, y=250)
 ENEMY_POSITION = POSITION(x=500, y=215)
@@ -17,6 +22,8 @@ ENEMY_HEALTH_HALF = 1800
 ENEMY_HEALTH_34 = 2700
 ENEMY_HEALTH_DEAD = 100
 g_enemy_health = 3600
+
+DAMAGE_HADOUKEN = 1000
 
 FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
 FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
@@ -50,9 +57,6 @@ SND_KP1 = None
 SND_KP2 = None
 SND_KP3 = None
 
-CLOCK = pygame.time.Clock()
-FPS = 12
-BACKGROUND_FRAMES = 8
 GAME_LOGGER = None
 
 
@@ -68,7 +72,7 @@ class State(Enum):
 
 class ENLIFE(IntEnum):
     FULL = 1
-    QUARTER = 2
+    THREE_FOUR = 2
     HALF = 3
     DEAD = 4
     FULL_RECT = 5
@@ -129,7 +133,9 @@ class Player:
         GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Loaded state " + repr(state)))
 
     def draw(self, state, surface, position):
+        global FPS, KABALI, GAME_OVER
         global g_enemy_health
+        global DAMAGE_HADOUKEN
         frame_length = len(self.frames[state])
         if self.current_frame >= frame_length - 1:
             self.current_frame = 0
@@ -141,7 +147,9 @@ class Player:
             if self.projectiles[indx]['x'] > ( ENEMY_POSITION.x - 50 ): # (WINDOW_WIDTH - FRAMELENGTH_PROJECTILE[0]):
                 surface.blit(self.frames[State.PROJECTILE_COMP][0], (ENEMY_POSITION.x - 50, self.__position['y']))
                 del self.projectiles[indx]
-                g_enemy_health -= 100
+                g_enemy_health -= DAMAGE_HADOUKEN
+                if FPS == KABALI:
+                    GAME_OVER = True
             else:
                 self.projectiles[indx]['x'] += 70
                 surface.blit(self.frames[State.PROJECTILE][0], (self.projectiles[indx]['x'], self.projectiles[indx]['y']))
@@ -200,25 +208,36 @@ def load_assets(player):
     load_sounds()
 
 
+def display_credits(surface):
+    pass
+
+
 def main():
-    global GAME_LOGGER, FPS
+    global FPS, GAME_OVER, KABALI
+    global GAME_LOGGER
     global g_enemy_health
     global SND_KP1, SND_KP2, SND_KP3
+    DAMAGE_PUNCHES_KICKS = 30
+    CLOCK = pygame.time.Clock()
+    BACKGROUND_FRAMES = 8
+
     current_state = State.IDLE
     GAME_LOGGER = Logger('exodus_log')
     pygame.init()
     GAME_LOGGER.log("Pygame Initialization: OK")
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    display_surface.fill((0, 0, 0))
     pygame.display.set_caption('Project Exodus')
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
 
+    # load * assets
     ryu = Player('Ryu')
     ryu.position['x'] = START_POSITION.x
     ryu.position['y'] = START_POSITION.y
     load_assets(ryu)
     attack_sounds = [SND_KP1, SND_KP2]
     len_sounds = len(attack_sounds)
-    print(len_sounds)
+    nuclear_clip = VideoFileClip('Assets/Video/nuclear.mp4')
 
     # load background frames
     background_frame = 0
@@ -235,7 +254,7 @@ def main():
         enemy[ENLIFE(int(file[1])+ 3)] = enemy[ENLIFE(int(file[1]))].get_rect()
     enemy_state = ENLIFE.FULL
 
-    while True:
+    while not GAME_OVER:
         keys = pygame.key.get_pressed()
         if keys[K_d]:
             current_state = State.WALKING
@@ -251,8 +270,12 @@ def main():
             GAME_LOGGER.log("{0}".format('K_a::' + repr(ryu.position)))
         elif keys[K_s]:
             current_state = State.PUNCH
+            if FPS == KABALI:
+                GAME_OVER = True
         elif keys[K_x]:
             current_state = State.KICK
+            if FPS == KABALI:
+                GAME_OVER = True
 
         for event in pygame.event.get():
             if event.type == KEYUP:
@@ -265,7 +288,7 @@ def main():
 
         if current_state == State.KICK or current_state == State.PUNCH:
             if ryu.position['x'] == (ENEMY_POSITION.x - 50):
-                g_enemy_health -= 30
+                g_enemy_health -= DAMAGE_PUNCHES_KICKS
                 SND_KP3.play()
             else:
                 attack_sounds[random.randrange(len_sounds - 1)].play()
@@ -277,7 +300,7 @@ def main():
         elif g_enemy_health <= ENEMY_HEALTH_HALF:
             enemy_state = ENLIFE.HALF
         elif g_enemy_health <= ENEMY_HEALTH_34:
-            enemy_state = ENLIFE.QUARTER
+            enemy_state = ENLIFE.THREE_FOUR
 
         display_surface.blit(enemy[enemy_state], ENEMY_POSITION)
 
@@ -289,9 +312,27 @@ def main():
             if background_frame >= BACKGROUND_FRAMES:
                 background_frame = 0
         else:
-            FPS = 4
+            FPS = KABALI
 
         CLOCK.tick(FPS)
+
+    FPS = 12
+    while True:
+        for event in pygame.event.get():
+            if event.type == KEYUP:
+                current_state = State.IDLE
+            elif event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    current_state = State.HADOUKEN
+            elif event.type == QUIT:
+                exit("Pressed X", GAME_LOGGER)
+
+        nuclear_clip.preview()
+        display_credits(display_surface)
+        exit("Game Over", GAME_LOGGER)
+
+        CLOCK.tick(FPS)
+
 
 if __name__ == "__main__":
     main()
