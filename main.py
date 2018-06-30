@@ -1,4 +1,4 @@
-import pygame, sys, os
+import pygame, sys, time, random, os
 from pygame.locals import *
 import collections
 from enum import Enum, IntEnum
@@ -11,6 +11,7 @@ RYU_WIDTH = 50
 RYU_HEIGHT = 105
 
 POSITION = collections.namedtuple('POSITION', ['x', 'y'])
+START_POSITION = POSITION(x=50, y=250)
 ENEMY_POSITION = POSITION(x=500, y=215)
 ENEMY_HEALTH_HALF = 1800
 ENEMY_HEALTH_34 = 2700
@@ -43,6 +44,11 @@ COLS_LMK = 3
 COLS_HK = 5
 COLS_HADOUKEN = 5
 COLS_PROJECTILE = 1
+
+SND_HADOUKEN = None
+SND_KP1 = None
+SND_KP2 = None
+SND_KP3 = None
 
 CLOCK = pygame.time.Clock()
 FPS = 12
@@ -108,11 +114,14 @@ class Player:
                                      " Filename: " + filename))
 
     def load_state(self, state, surface):
+        global SND_HADOUKEN
         # start hadouken always from frame #1
         if self.state == State.HADOUKEN and self.current_frame > 0:
             self.state = State.HADOUKEN
             if self.current_frame == len(self.frames[State.HADOUKEN]) - 1:
                 self.projectiles.append(copy.copy(self.__position))
+                SND_HADOUKEN.play()
+
         elif self.state != state:
             self.current_frame = 0
             self.state = state
@@ -155,32 +164,61 @@ def exit(text, logger=None):
     sys.exit()
 
 
+def load_sounds():
+    global SND_HADOUKEN, SND_KP1, SND_KP2, SND_KP3
+    SND_HADOUKEN = pygame.mixer.Sound("Assets/Sounds/hadouken.wav")
+    SND_HADOUKEN.set_volume(0.3)
+    SND_KP1 = pygame.mixer.Sound("Assets/Sounds/attk1.wav")
+    SND_KP1.set_volume(0.1)
+    SND_KP2 = pygame.mixer.Sound("Assets/Sounds/attk3.wav")
+    SND_KP2.set_volume(0.1)
+    SND_KP3 = pygame.mixer.Sound("Assets/Sounds/attk11.wav")
+    SND_KP3.set_volume(0.1)
+
+
+def load_states(player):
+    player.add_state('Assets/pl_frames/ryu-idle.png', COLS_IDLE, State.IDLE)
+    player.add_state('Assets/pl_frames/ryu-walking.png', COLS_WALK, State.WALKING)
+    player.add_state('Assets/pl_frames/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
+    player.add_state('Assets/ef_frames/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    player.add_state('Assets/ef_frames/mf-blast-comp.png', COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    player.add_state('Assets/pl_frames/ryu-lp.png', COLS_LP, State.PUNCH, FRAMESTART_LP, FRAMELENGTH_LP)
+    player.add_state('Assets/pl_frames/ryu-mhp.png', COLS_MHP, State.PUNCH, FRAMESTART_MHP, FRAMELENGTH_MHP)
+    player.add_state('Assets/pl_frames/ryu-flp.png', COLS_FLP, State.PUNCH)
+    player.add_state('Assets/pl_frames/ryu-fmp.png', COLS_FMP, State.PUNCH, FRAMESTART_FMP, FRAMELENGTH_FMP)
+    player.add_state('Assets/pl_frames/ryu-lmk.png', COLS_LMK, State.KICK, FRAMESTART_LMK, FRAMELENGTH_LMK)
+    player.add_state('Assets/pl_frames/ryu-hk.png', COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
+
+
+def loading_screen():
+    pass
+
+
+def load_assets(player):
+    loading_screen()
+    load_states(player)
+    load_sounds()
+
+
 def main():
-    global GAME_LOGGER, FPS, g_enemy_health
+    global GAME_LOGGER, FPS
+    global g_enemy_health
+    global SND_KP1, SND_KP2, SND_KP3
+    current_state = State.IDLE
     GAME_LOGGER = Logger('exodus_log')
     pygame.init()
     GAME_LOGGER.log("Pygame Initialization: OK")
-
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('Project Exodus')
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
 
-    current_state = State.IDLE
-
     ryu = Player('Ryu')
-    ryu.add_state('Assets/pl_frames/ryu-idle.png', COLS_IDLE, State.IDLE)
-    ryu.add_state('Assets/pl_frames/ryu-walking.png', COLS_WALK, State.WALKING)
-    ryu.add_state('Assets/pl_frames/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
-    ryu.add_state('Assets/ef_frames/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
-    ryu.add_state('Assets/ef_frames/mf-blast-comp.png', COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
-    ryu.add_state('Assets/pl_frames/ryu-lp.png', COLS_LP, State.PUNCH, FRAMESTART_LP, FRAMELENGTH_LP)
-    ryu.add_state('Assets/pl_frames/ryu-mhp.png', COLS_MHP, State.PUNCH, FRAMESTART_MHP, FRAMELENGTH_MHP)
-    ryu.add_state('Assets/pl_frames/ryu-flp.png', COLS_FLP, State.PUNCH)
-    ryu.add_state('Assets/pl_frames/ryu-fmp.png', COLS_FMP, State.PUNCH, FRAMESTART_FMP, FRAMELENGTH_FMP)
-    ryu.add_state('Assets/pl_frames/ryu-lmk.png', COLS_LMK, State.KICK, FRAMESTART_LMK, FRAMELENGTH_LMK)
-    ryu.add_state('Assets/pl_frames/ryu-hk.png', COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
-
-    ryu.position = {'x': 50, 'y': 250}
+    ryu.position['x'] = START_POSITION.x
+    ryu.position['y'] = START_POSITION.y
+    load_assets(ryu)
+    attack_sounds = [SND_KP1, SND_KP2]
+    len_sounds = len(attack_sounds)
+    print(len_sounds)
 
     # load background frames
     background_frame = 0
@@ -225,10 +263,12 @@ def main():
             elif event.type == QUIT:
                 exit("Pressed X", GAME_LOGGER)
 
-        if (current_state == State.KICK or current_state == State.PUNCH) and \
-                (ryu.position['x'] == (ENEMY_POSITION.x - 50)):
-            g_enemy_health -= 30
-            print(g_enemy_health)
+        if current_state == State.KICK or current_state == State.PUNCH:
+            if ryu.position['x'] == (ENEMY_POSITION.x - 50):
+                g_enemy_health -= 30
+                SND_KP3.play()
+            else:
+                attack_sounds[random.randrange(len_sounds - 1)].play()
 
         ryu.load_state(current_state, display_surface)
 
