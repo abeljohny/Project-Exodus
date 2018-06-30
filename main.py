@@ -12,7 +12,10 @@ RYU_HEIGHT = 105
 
 POSITION = collections.namedtuple('POSITION', ['x', 'y'])
 ENEMY_POSITION = POSITION(x=500, y=215)
-ENEMY_HEALTH = 800
+ENEMY_HEALTH_HALF = 1800
+ENEMY_HEALTH_34 = 2700
+ENEMY_HEALTH_DEAD = 100
+g_enemy_health = 3600
 
 FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
 FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
@@ -117,7 +120,7 @@ class Player:
         GAME_LOGGER.log("{0}".format("Player Name: " + self.playerName + " Loaded state " + repr(state)))
 
     def draw(self, state, surface, position):
-        global ENEMY_HEALTH
+        global g_enemy_health
         frame_length = len(self.frames[state])
         if self.current_frame >= frame_length - 1:
             self.current_frame = 0
@@ -129,7 +132,7 @@ class Player:
             if self.projectiles[indx]['x'] > ( ENEMY_POSITION.x - 50 ): # (WINDOW_WIDTH - FRAMELENGTH_PROJECTILE[0]):
                 surface.blit(self.frames[State.PROJECTILE_COMP][0], (ENEMY_POSITION.x - 50, self.__position['y']))
                 del self.projectiles[indx]
-                ENEMY_HEALTH -= 50
+                g_enemy_health -= 100
             else:
                 self.projectiles[indx]['x'] += 70
                 surface.blit(self.frames[State.PROJECTILE][0], (self.projectiles[indx]['x'], self.projectiles[indx]['y']))
@@ -153,7 +156,7 @@ def exit(text, logger=None):
 
 
 def main():
-    global GAME_LOGGER, FPS
+    global GAME_LOGGER, FPS, g_enemy_health
     GAME_LOGGER = Logger('exodus_log')
     pygame.init()
     GAME_LOGGER.log("Pygame Initialization: OK")
@@ -163,18 +166,19 @@ def main():
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
 
     current_state = State.IDLE
+
     ryu = Player('Ryu')
-    ryu.add_state('Assets/ryu-idle.png', COLS_IDLE, State.IDLE)
-    ryu.add_state('Assets/ryu-walking.png', COLS_WALK, State.WALKING)
-    ryu.add_state('Assets/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
-    ryu.add_state('Assets/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
-    ryu.add_state('Assets/mf-blast-comp.png', COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
-    ryu.add_state('Assets/ryu-lp.png', COLS_LP, State.PUNCH, FRAMESTART_LP, FRAMELENGTH_LP)
-    ryu.add_state('Assets/ryu-mhp.png', COLS_MHP, State.PUNCH, FRAMESTART_MHP, FRAMELENGTH_MHP)
-    ryu.add_state('Assets/ryu-flp.png', COLS_FLP, State.PUNCH)
-    ryu.add_state('Assets/ryu-fmp.png', COLS_FMP, State.PUNCH, FRAMESTART_FMP, FRAMELENGTH_FMP)
-    ryu.add_state('Assets/ryu-lmk.png', COLS_LMK, State.KICK, FRAMESTART_LMK, FRAMELENGTH_LMK)
-    ryu.add_state('Assets/ryu-hk.png', COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
+    ryu.add_state('Assets/pl_frames/ryu-idle.png', COLS_IDLE, State.IDLE)
+    ryu.add_state('Assets/pl_frames/ryu-walking.png', COLS_WALK, State.WALKING)
+    ryu.add_state('Assets/pl_frames/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
+    ryu.add_state('Assets/ef_frames/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    ryu.add_state('Assets/ef_frames/mf-blast-comp.png', COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    ryu.add_state('Assets/pl_frames/ryu-lp.png', COLS_LP, State.PUNCH, FRAMESTART_LP, FRAMELENGTH_LP)
+    ryu.add_state('Assets/pl_frames/ryu-mhp.png', COLS_MHP, State.PUNCH, FRAMESTART_MHP, FRAMELENGTH_MHP)
+    ryu.add_state('Assets/pl_frames/ryu-flp.png', COLS_FLP, State.PUNCH)
+    ryu.add_state('Assets/pl_frames/ryu-fmp.png', COLS_FMP, State.PUNCH, FRAMESTART_FMP, FRAMELENGTH_FMP)
+    ryu.add_state('Assets/pl_frames/ryu-lmk.png', COLS_LMK, State.KICK, FRAMESTART_LMK, FRAMELENGTH_LMK)
+    ryu.add_state('Assets/pl_frames/ryu-hk.png', COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
 
     ryu.position = {'x': 50, 'y': 250}
 
@@ -221,21 +225,25 @@ def main():
             elif event.type == QUIT:
                 exit("Pressed X", GAME_LOGGER)
 
+        if (current_state == State.KICK or current_state == State.PUNCH) and \
+                (ryu.position['x'] == (ENEMY_POSITION.x - 50)):
+            g_enemy_health -= 30
+            print(g_enemy_health)
+
         ryu.load_state(current_state, display_surface)
 
-        if ENEMY_HEALTH == 750:
-            enemy_state = ENLIFE.QUARTER
-        elif ENEMY_HEALTH == 500:
-            enemy_state = ENLIFE.HALF
-        elif ENEMY_HEALTH == 100:
+        if g_enemy_health <= ENEMY_HEALTH_DEAD:
             enemy_state = ENLIFE.DEAD
+        elif g_enemy_health <= ENEMY_HEALTH_HALF:
+            enemy_state = ENLIFE.HALF
+        elif g_enemy_health <= ENEMY_HEALTH_34:
+            enemy_state = ENLIFE.QUARTER
 
         display_surface.blit(enemy[enemy_state], ENEMY_POSITION)
 
         pygame.display.update()
-        # display_surface.fill(WHITE)
         # draw enemy & background
-        if ENEMY_HEALTH > 100:
+        if g_enemy_health > 100:
             display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
             background_frame += 1
             if background_frame >= BACKGROUND_FRAMES:
