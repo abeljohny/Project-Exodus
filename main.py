@@ -18,9 +18,26 @@ FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
 FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
 FRAMELENGTH_PROJECTILE = [40]
 FRAMESTART_PROJECTILE = [0]
+FRAMELENGTH_LP = [50, 65, 45]
+FRAMESTART_LP = [0, 50, 115]
+FRAMELENGTH_MHP = [50, 55, 80, 57, 48]
+FRAMESTART_MHP = [0, 50, 105, 185, 242]
+FRAMELENGTH_FMP = [50, 52, 68, 52, 68, 55, 45]
+FRAMESTART_FMP = [0, 50, 102, 170, 222, 290, 345]
+FRAMELENGTH_LMK = [60, 72, 55]
+FRAMESTART_LMK = [0, 60, 132]
+FRAMELENGTH_HK = [55, 60, 75, 67, 48]
+FRAMESTART_HK = [0, 55, 115, 190, 257]
 
 COLS_IDLE = 4
 COLS_WALK = 5
+COLS_LP = 3
+COLS_MHP = 5
+COLS_FLP = 3
+COLS_FMP = 7
+COLS_FHP = 5
+COLS_LMK = 3
+COLS_HK = 5
 COLS_HADOUKEN = 5
 COLS_PROJECTILE = 1
 
@@ -36,6 +53,8 @@ class State(Enum):
     HADOUKEN = 3
     PROJECTILE = 4
     PROJECTILE_COMP = 5
+    PUNCH = 6
+    KICK = 7
 
 
 class ENLIFE(IntEnum):
@@ -150,6 +169,13 @@ def main():
     ryu.add_state('Assets/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
     ryu.add_state('Assets/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
     ryu.add_state('Assets/mf-blast-comp.png', COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    ryu.add_state('Assets/ryu-lp.png', COLS_LP, State.PUNCH, FRAMESTART_LP, FRAMELENGTH_LP)
+    ryu.add_state('Assets/ryu-mhp.png', COLS_MHP, State.PUNCH, FRAMESTART_MHP, FRAMELENGTH_MHP)
+    ryu.add_state('Assets/ryu-flp.png', COLS_FLP, State.PUNCH)
+    ryu.add_state('Assets/ryu-fmp.png', COLS_FMP, State.PUNCH, FRAMESTART_FMP, FRAMELENGTH_FMP)
+    ryu.add_state('Assets/ryu-lmk.png', COLS_LMK, State.KICK, FRAMESTART_LMK, FRAMELENGTH_LMK)
+    ryu.add_state('Assets/ryu-hk.png', COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
+
     ryu.position = {'x': 50, 'y': 250}
 
     # load background frames
@@ -181,6 +207,10 @@ def main():
                 ryu.position['x'] = ryu.position['x'] - 25
             ryu.position = ryu.position
             GAME_LOGGER.log("{0}".format('K_a::' + repr(ryu.position)))
+        elif keys[K_s]:
+            current_state = State.PUNCH
+        elif keys[K_x]:
+            current_state = State.KICK
 
         for event in pygame.event.get():
             if event.type == KEYUP:
