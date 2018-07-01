@@ -18,9 +18,12 @@ GAME_OVER = False
 POSITION = collections.namedtuple('POSITION', ['x', 'y'])
 START_POSITION = POSITION(x=50, y=250)
 ENEMY_POSITION = POSITION(x=500, y=215)
+
 ENEMY_HEALTH_HALF = 1800
 ENEMY_HEALTH_34 = 2700
 ENEMY_HEALTH_DEAD = 100
+ENEMY_SHIFT_KP = 5
+ENEMY_SHIFT_HD = 10
 g_enemy_health = 3600
 
 DAMAGE_HADOUKEN = 1000 # changed to 1000 for easy testing
@@ -59,6 +62,8 @@ SND_KP3 = None
 
 GAME_LOGGER = None
 
+HADOUKEN_SHIFT = False
+
 
 class State(Enum):
     IDLE = 1
@@ -76,7 +81,7 @@ class ENLIFE(IntEnum):
     HALF = 3
     DEAD = 4
     FULL_RECT = 5
-    QUARTER_RECT = 6
+    THREE_FOUR_RECT = 6
     HALF_RECT = 7
     DEAD_RECT = 8
 
@@ -136,6 +141,7 @@ class Player:
         global FPS, KABALI, GAME_OVER
         global g_enemy_health
         global DAMAGE_HADOUKEN
+        global HADOUKEN_SHIFT
         frame_length = len(self.frames[state])
         if self.current_frame >= frame_length - 1:
             self.current_frame = 0
@@ -148,6 +154,7 @@ class Player:
                 surface.blit(self.frames[State.PROJECTILE_COMP][0], (ENEMY_POSITION.x - 50, self.__position['y']))
                 del self.projectiles[indx]
                 g_enemy_health -= DAMAGE_HADOUKEN
+                HADOUKEN_SHIFT = True
                 if FPS == KABALI:
                     GAME_OVER = True
             else:
@@ -177,11 +184,11 @@ def load_sounds():
     SND_HADOUKEN = pygame.mixer.Sound("Assets/Sounds/hadouken.wav")
     SND_HADOUKEN.set_volume(0.3)
     SND_KP1 = pygame.mixer.Sound("Assets/Sounds/attk1.wav")
-    SND_KP1.set_volume(0.1)
+    SND_KP1.set_volume(0.3)
     SND_KP2 = pygame.mixer.Sound("Assets/Sounds/attk3.wav")
-    SND_KP2.set_volume(0.1)
+    SND_KP2.set_volume(0.3)
     SND_KP3 = pygame.mixer.Sound("Assets/Sounds/attk11.wav")
-    SND_KP3.set_volume(0.1)
+    SND_KP3.set_volume(0.3)
 
 
 def load_states(player):
@@ -198,46 +205,44 @@ def load_states(player):
     player.add_state('Assets/pl_frames/ryu-hk.png', COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
 
 
-def loading_screen():
-    pass
-
-
-def load_assets(player):
-    loading_screen()
+def load_player_assets(player):
     load_states(player)
     load_sounds()
 
 
-def display_credits(surface):
-    pass
-
-
 def main():
     global FPS, GAME_OVER, KABALI
-    global GAME_LOGGER
-    global g_enemy_health
+    global g_enemy_health, ENEMY_SHIFT_KP, ENEMY_SHIFT_HD, ENEMY_POSITION
     global SND_KP1, SND_KP2, SND_KP3
+    global HADOUKEN_SHIFT
+    global GAME_LOGGER
+
     DAMAGE_PUNCHES_KICKS = 30
     CLOCK = pygame.time.Clock()
     BACKGROUND_FRAMES = 8
 
+    enemy_position = {'x': ENEMY_POSITION.x, 'y': ENEMY_POSITION.y}
     current_state = State.IDLE
+
     GAME_LOGGER = Logger('exodus_log')
+    pygame.mixer.pre_init(44100, -16, 2, 2048)
     pygame.init()
+    pygame.mixer.init()
     GAME_LOGGER.log("Pygame Initialization: OK")
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     display_surface.fill((0, 0, 0))
     pygame.display.set_caption('Project Exodus')
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
 
-    # load * assets
+    # loading player assets
     ryu = Player('Ryu')
     ryu.position['x'] = START_POSITION.x
     ryu.position['y'] = START_POSITION.y
-    load_assets(ryu)
+    load_player_assets(ryu)
     attack_sounds = [SND_KP1, SND_KP2]
     len_sounds = len(attack_sounds)
-    nuclear_clip = VideoFileClip('Assets/Video/nuclear.mp4')
+    credits_clip = VideoFileClip('Assets/Video/credits.mp4')
+    intro_clip = VideoFileClip('Assets/Video/intro.mp4')
 
     # load background frames
     background_frame = 0
@@ -246,13 +251,16 @@ def main():
         background['img'].append(pygame.image.load('./Assets/bg_frames/' + file))
         background['rect'].append(background['img'][-1].get_rect())
 
-    # load enemy frames
-    # ordering for en_frames paramount
+    # load enemy frames (ordering in en_frames/ paramount)
     enemy = collections.defaultdict()
     for file in os.listdir('./Assets/en_frames'):
         enemy[ENLIFE(int(file[1]))] = pygame.image.load('./Assets/en_frames/' + file)
         enemy[ENLIFE(int(file[1])+ 3)] = enemy[ENLIFE(int(file[1]))].get_rect()
     enemy_state = ENLIFE.FULL
+
+    # intro_clip.preview()  # re-enable this bitch
+    pygame.mixer.music.load('Assets/Sounds/main-theme.mp3')
+    pygame.mixer.music.play(-1, 23.6)
 
     while not GAME_OVER:
         keys = pygame.key.get_pressed()
@@ -283,15 +291,24 @@ def main():
             elif event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     current_state = State.HADOUKEN
+                elif event.key == K_s:
+                    current_state = State.PUNCH
+                elif event.key == K_x:
+                    current_state = State.KICK
             elif event.type == QUIT:
                 exit("Pressed X", GAME_LOGGER)
 
         if current_state == State.KICK or current_state == State.PUNCH:
             if ryu.position['x'] == (ENEMY_POSITION.x - 50):
+                enemy_position['x'] += ENEMY_SHIFT_KP
                 g_enemy_health -= DAMAGE_PUNCHES_KICKS
                 SND_KP3.play()
             else:
                 attack_sounds[random.randrange(len_sounds - 1)].play()
+
+        if HADOUKEN_SHIFT:
+            enemy_position['x'] += ENEMY_SHIFT_HD
+            HADOUKEN_SHIFT = False
 
         ryu.load_state(current_state, display_surface)
 
@@ -302,7 +319,8 @@ def main():
         elif g_enemy_health <= ENEMY_HEALTH_34:
             enemy_state = ENLIFE.THREE_FOUR
 
-        display_surface.blit(enemy[enemy_state], ENEMY_POSITION)
+        display_surface.blit(enemy[enemy_state], (enemy_position['x'], enemy_position['y']))
+        enemy_position['x'] = ENEMY_POSITION.x
 
         pygame.display.update()
         # draw enemy & background
@@ -327,8 +345,7 @@ def main():
             elif event.type == QUIT:
                 exit("Pressed X", GAME_LOGGER)
 
-        nuclear_clip.preview()
-        display_credits(display_surface)
+        credits_clip.preview()
         exit("Game Over", GAME_LOGGER)
 
         CLOCK.tick(FPS)
