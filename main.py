@@ -217,6 +217,7 @@ def main():
     global HADOUKEN_SHIFT
     global GAME_LOGGER
 
+    paused = False
     DAMAGE_PUNCHES_KICKS = 30
     CLOCK = pygame.time.Clock()
     BACKGROUND_FRAMES = 8
@@ -295,44 +296,50 @@ def main():
                     current_state = State.PUNCH
                 elif event.key == K_x:
                     current_state = State.KICK
+                elif event.key == K_p:
+                    paused = not paused
             elif event.type == QUIT:
                 exit("Pressed X", GAME_LOGGER)
 
-        if current_state == State.KICK or current_state == State.PUNCH:
-            if ryu.position['x'] == (ENEMY_POSITION.x - 50):
-                enemy_position['x'] += ENEMY_SHIFT_KP
-                g_enemy_health -= DAMAGE_PUNCHES_KICKS
-                SND_KP3.play()
+        if not paused:
+            pygame.mixer.music.unpause()
+            if current_state == State.KICK or current_state == State.PUNCH:
+                    if ryu.position['x'] == (ENEMY_POSITION.x - 50):
+                        enemy_position['x'] += ENEMY_SHIFT_KP
+                        g_enemy_health -= DAMAGE_PUNCHES_KICKS
+                        SND_KP3.play()
+                    else:
+                        attack_sounds[random.randrange(len_sounds - 1)].play()
+
+            if HADOUKEN_SHIFT:
+                enemy_position['x'] += ENEMY_SHIFT_HD
+                HADOUKEN_SHIFT = False
+
+            ryu.load_state(current_state, display_surface)
+
+            if g_enemy_health <= ENEMY_HEALTH_DEAD:
+                enemy_state = ENLIFE.DEAD
+            elif g_enemy_health <= ENEMY_HEALTH_HALF:
+                enemy_state = ENLIFE.HALF
+            elif g_enemy_health <= ENEMY_HEALTH_34:
+                enemy_state = ENLIFE.THREE_FOUR
+
+            display_surface.blit(enemy[enemy_state], (enemy_position['x'], enemy_position['y']))
+            enemy_position['x'] = ENEMY_POSITION.x
+
+            pygame.display.update()
+            # draw enemy & background
+            if g_enemy_health > 100:
+                display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
+                background_frame += 1
+                if background_frame >= BACKGROUND_FRAMES:
+                    background_frame = 0
             else:
-                attack_sounds[random.randrange(len_sounds - 1)].play()
+                FPS = KABALI
 
-        if HADOUKEN_SHIFT:
-            enemy_position['x'] += ENEMY_SHIFT_HD
-            HADOUKEN_SHIFT = False
-
-        ryu.load_state(current_state, display_surface)
-
-        if g_enemy_health <= ENEMY_HEALTH_DEAD:
-            enemy_state = ENLIFE.DEAD
-        elif g_enemy_health <= ENEMY_HEALTH_HALF:
-            enemy_state = ENLIFE.HALF
-        elif g_enemy_health <= ENEMY_HEALTH_34:
-            enemy_state = ENLIFE.THREE_FOUR
-
-        display_surface.blit(enemy[enemy_state], (enemy_position['x'], enemy_position['y']))
-        enemy_position['x'] = ENEMY_POSITION.x
-
-        pygame.display.update()
-        # draw enemy & background
-        if g_enemy_health > 100:
-            display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
-            background_frame += 1
-            if background_frame >= BACKGROUND_FRAMES:
-                background_frame = 0
+            CLOCK.tick(FPS)
         else:
-            FPS = KABALI
-
-        CLOCK.tick(FPS)
+            pygame.mixer.music.pause()
 
     FPS = 12
     while True:
