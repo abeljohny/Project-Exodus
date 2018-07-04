@@ -273,7 +273,7 @@ def main():
     enemy_state = ENLIFE.FULL
 
     intro_clip.preview()
-    pygame.mixer.music.load('./Assets/Sounds/main-theme.mp3')
+    pygame.mixer.music.load('./Assets/Sounds/main-theme.ogg')
     pygame.mixer.music.play(-1, 23.6)
 
     while not GAME_OVER:
