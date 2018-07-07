@@ -1,23 +1,24 @@
 {
   "version": "1.0.0",
-  "description": "Exodus Game Data (untested & raw -- use with caution)",
+  "description": "Exodus Game Data [untested & raw (use 'default' to fallback to default settings)]",
   "asset directory": {
     "sounds": {
-      "description": "use .wav format for effects and .ogg for theme for max compatibility if you're customizing else leave as default",
+      "description": "Customize sound effects (use .wav format for effects and .ogg for theme for max compatibility)",
       "punch/kick-miss-1": "default",
       "punch/kick-miss-2": "default",
       "punch/kick-hit": "default",
       "hadouken": "default",
-      "bg-music": "default"
+      "bg-music": "default",
+      "bg-music-start": "default"
     },
     "video": {
-      "description": "Intro & Credits file paths. Change to use your own.",
+      "description": "Customize Intro & Credits.",
       "intro": "default",
       "credits": "default"
     },
     "textures": {
       "bg-frames": {
-        "description": "Background frames (max 8 frames supported)",
+        "description": "Customize background frames (ALL 8 frames required)",
         "bg-frames-1": "default",
         "bg-frames-2": "default",
         "bg-frames-3": "default",
@@ -28,7 +29,7 @@
         "bg-frames-8": "default"
       },
       "en-frames": {
-        "description": "mofo frames (recommended size: 106 x 144)",
+        "description": "Customize enemy frames (recommended image size: 106 x 144)",
         "en-frames-1": "default",
         "en-frames-2": "default",
         "en-frames-3": "default",
@@ -37,18 +38,22 @@
     }
   },
   "player": {
-    "description": "Customize punch/kick/hadouken controls",
+    "description": "Future use",
     "name": "default"
   },
   "console": {
-    "description": "Console Properties",
+    "description": "Customize Console Properties",
     "window-title": "default"
   },
   "controls": {
+    "description": "Customize control keys",
     "punch": "default",
     "kick": "default",
-    "hadouken": "p",
+    "hadouken": "default",
     "pause": "default"
   },
-  "debugging": "off"
+  "debugging": {
+    "mode": "off",
+    "output-file": "default"
+  }
 }

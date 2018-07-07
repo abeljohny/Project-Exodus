@@ -125,6 +125,11 @@ def exit(text='', logger=None):
     sys.exit()
 
 
+def display_error(error_txt, ext=True):
+    response = tkinter.messagebox.showerror("System Error", error_txt)
+    if ext and response == 'ok':
+        exit()
+
 def load_sounds():
     global SND_HADOUKEN, SND_KP1, SND_KP2, SND_KP3
     SND_HADOUKEN = pygame.mixer.Sound(PATH_HADOUKEN)
@@ -164,91 +169,122 @@ def load_gamedata():
     global PATH_KP1, PATH_KP2, PATH_KP3, PATH_HADOUKEN, PATH_BGMUSIC, PATH_INTRO, PATH_CREDITS
     global BG_FRAMES, EN_FRAMES
     global CAPTION
+    global START_TIME
     global PLAYER_NAME
     global KEY_PAUSE, KEY_KICK, KEY_PUNCH, KEY_HADOUKEN
-    global DEBUGGING_MOD
+    global DEBUGGING_MOD, DEBUG_FILE_PATH
 
-    l_path = None
+    l_tmp = None
     controls_set = None
 
     with open('./gamedata.json') as gamedata_json:
         gamedata = json.load(gamedata_json)
         #  load sound paths
-        l_path = gamedata['asset directory']['sounds']['punch/kick-miss-1']
-        if l_path.lower() != 'default':
-            PATH_KP1 = copy.copy(l_path)
-        l_path = gamedata['asset directory']['sounds']['punch/kick-miss-2']
-        if l_path.lower() != 'default':
-            PATH_KP2 = copy.copy(l_path)
-        l_path = gamedata['asset directory']['sounds']['punch/kick-hit']
-        if l_path.lower() != 'default':
-            PATH_KP3 = copy.copy(l_path)
-        l_path = gamedata['asset directory']['sounds']['hadouken']
-        if l_path.lower() != 'default':
-            PATH_HADOUKEN = copy.copy(l_path)
-        l_path = gamedata['asset directory']['sounds']['bg-music']
-        if l_path.lower() != 'default':
-            PATH_BGMUSIC = copy.copy(l_path)
+        l_tmp = gamedata['asset directory']['sounds']['punch/kick-miss-1']
+        if l_tmp.lower() != 'default':
+            PATH_KP1 = copy.copy(l_tmp) if l_tmp != '' else PATH_KP1
+            if not os.path.exists(PATH_KP1):
+                display_error("File path"+PATH_KP1+" does not exist in "
+                                                   "asset directory/sounds/punch/kick-miss-1 (gamedata.json)")
+        l_tmp = gamedata['asset directory']['sounds']['punch/kick-miss-2']
+        if l_tmp.lower() != 'default':
+            PATH_KP2 = copy.copy(l_tmp) if l_tmp != '' else PATH_KP2
+            if not os.path.exists(PATH_KP2):
+                display_error("File path"+PATH_KP2+" does not exist in "
+                                                   "asset directory/sounds/punch/kick-miss-2 (gamedata.json)")
+        l_tmp = gamedata['asset directory']['sounds']['punch/kick-hit']
+        if l_tmp.lower() != 'default':
+            PATH_KP3 = copy.copy(l_tmp) if l_tmp != '' else PATH_KP3
+            if not os.path.exists(PATH_KP3):
+                display_error("File path"+PATH_KP3+" does not exist in "
+                                                   "asset directory/sounds/punch/kick-hit (gamedata.json)")
+        l_tmp = gamedata['asset directory']['sounds']['hadouken']
+        if l_tmp.lower() != 'default':
+            PATH_HADOUKEN = copy.copy(l_tmp) if l_tmp != '' else PATH_HADOUKEN
+            if not os.path.exists(PATH_HADOUKEN):
+                display_error("File path"+PATH_HADOUKEN+" does not exist in "
+                                                        "asset directory/sounds/hadouken (gamedata.json)")
+        l_tmp = gamedata['asset directory']['sounds']['bg-music']
+        if l_tmp.lower() != 'default':
+            PATH_BGMUSIC = copy.copy(l_tmp) if l_tmp != '' else PATH_BGMUSIC
+            if not os.path.exists(PATH_KP1):
+                display_error("File path"+PATH_BGMUSIC+" does not exist!")
+        l_tmp = gamedata['asset directory']['sounds']['bg-music-start']
+        if l_tmp.lower() != 'default':
+            START_TIME = copy.copy(int(l_tmp)) if l_tmp != '' else START_TIME
         # load video paths
-        l_path = gamedata['asset directory']['video']['intro']
-        if l_path.lower() != 'default':
-            PATH_INTRO = copy.copy(l_path)
-        l_path = gamedata['asset directory']['video']['credits']
-        if l_path.lower() != 'default':
-            PATH_CREDITS = copy.copy(l_path)
+        l_tmp = gamedata['asset directory']['video']['intro']
+        if l_tmp.lower() != 'default':
+            PATH_INTRO = copy.copy(l_tmp) if l_tmp != '' else PATH_INTRO
+            if not os.path.exists(PATH_INTRO):
+                display_error("File path"+PATH_INTRO+" does not exist in "
+                                                     "asset directory/video/intro (gamedata.json)")
+        l_tmp = gamedata['asset directory']['video']['credits']
+        if l_tmp.lower() != 'default':
+            PATH_CREDITS = copy.copy(l_tmp) if l_tmp != '' else PATH_CREDITS
+            if not os.path.exists(PATH_KP1):
+                display_error('File path' + PATH_CREDITS + ' does not exist in '
+                                                           'asset directory/video/credits (gamedata.json)')
         # load background frames
         for i in range(1, 9):
-            l_path = gamedata['asset directory']['textures']['bg-frames']['bg-frames-'+str(i)]
-            if l_path.lower() != 'default':
-                BG_FRAMES['img'].append(pygame.image.load(l_path))
+            l_tmp = gamedata['asset directory']['textures']['bg-frames']['bg-frames-'+str(i)]
+            if not os.path.exists(l_tmp.lower()):
+                display_error('File path' + l_tmp + ' does not exist in asset directory/textures/bg-frames/bg-frames-'
+                              + str(i)+' (gamedata.json)')
+            if l_tmp.lower() != 'default':
+                BG_FRAMES['img'].append(pygame.image.load(l_tmp))
                 BG_FRAMES['rect'].append(BG_FRAMES['img'][-1].get_rect())
             else:
                 BG_FRAMES['img'].append(pygame.image.load('./Assets/Textures/bg_frames/frame-'+str(i)+'.png'))
                 BG_FRAMES['rect'].append(BG_FRAMES['img'][-1].get_rect())
         # load enemy frames (ordering in en_frames/ paramount)
         for i in range(1, 5):
-            l_path = gamedata['asset directory']['textures']['en-frames']['en-frames-'+str(i)]
-            if l_path.lower() != 'default':
-                EN_FRAMES[ENLIFE(i)] = pygame.image.load(l_path)
+            l_tmp = gamedata['asset directory']['textures']['en-frames']['en-frames-'+str(i)]
+            if not os.path.exists(l_tmp.lower()):
+                display_error('File path' + l_tmp + ' does not exist in asset directory/textures/en-frames/en-frames-'
+                              + str(i) + ' (gamedata.json)')
+            if l_tmp.lower() != 'default':
+                EN_FRAMES[ENLIFE(i)] = pygame.image.load(l_tmp)
                 EN_FRAMES[ENLIFE(i + 3)] = EN_FRAMES[ENLIFE(i)].get_rect()
             else:
                 EN_FRAMES[ENLIFE(i)] = pygame.image.load('./Assets/Textures/en_frames/k'+str(i)+'.png')
                 EN_FRAMES[ENLIFE(i + 3)] = EN_FRAMES[ENLIFE(i)].get_rect()
         # set control keys
-        l_path = gamedata['controls']['punch']
-        if l_path.lower() != 'default':
-            KEY_PUNCH = copy.copy(ord(l_path))
-        l_path = gamedata['controls']['kick']
-        if l_path.lower() != 'default':
-            KEY_KICK = copy.copy(ord(l_path))
-        l_path = gamedata['controls']['hadouken']
-        if l_path.lower() != 'default':
-            KEY_HADOUKEN = copy.copy(ord(l_path))
-        l_path = gamedata['controls']['pause']
-        if l_path.lower() != 'default':
-            KEY_PAUSE = copy.copy(ord(l_path))
+        l_tmp = gamedata['controls']['punch']
+        if l_tmp.lower() != 'default':
+            KEY_PUNCH = copy.copy(ord(l_tmp)) if l_tmp != '' else KEY_PUNCH
+        l_tmp = gamedata['controls']['kick']
+        if l_tmp.lower() != 'default':
+            KEY_KICK = copy.copy(ord(l_tmp)) if l_tmp != '' else KEY_KICK
+        l_tmp = gamedata['controls']['hadouken']
+        if l_tmp.lower() != 'default':
+            KEY_HADOUKEN = copy.copy(ord(l_tmp)) if l_tmp != '' else KEY_HADOUKEN
+        l_tmp = gamedata['controls']['pause']
+        if l_tmp.lower() != 'default':
+            KEY_PAUSE = copy.copy(ord(l_tmp)) if l_tmp != '' else KEY_PAUSE
         # check all keys are unique
         controls_set = {KEY_PUNCH, KEY_KICK, KEY_HADOUKEN, KEY_PAUSE}
         if len(controls_set) != 4:
-            tkinter.messagebox.showerror("System Error", "Control Keys must be unique")
-            exit()
+            display_error("Control Keys must be unique")
         # set window caption
-        l_path = gamedata['console']['window-title']
-        if l_path.lower() != 'default':
-            CAPTION = copy.copy(l_path)
+        l_tmp = gamedata['console']['window-title']
+        if l_tmp.lower() != 'default':
+            CAPTION = copy.copy(l_tmp) if l_tmp != '' else CAPTION
         # set player name
-        l_path = gamedata['player']['name']
-        if l_path.lower() != 'default':
-            PLAYER_NAME = copy.copy(l_path)
-        # set debugging mode
-        l_path = gamedata['debugging']
-        if l_path.lower() == "on":
+        l_tmp = gamedata['player']['name']
+        if l_tmp.lower() != 'default':
+            PLAYER_NAME = copy.copy(l_tmp) if l_tmp != '' else PLAYER_NAME
+        # set debugging mode & file path
+        l_tmp = gamedata['debugging']['mode']
+        if l_tmp.lower() == "on":
             DEBUGGING_MOD = True
-
+        l_tmp = gamedata['debugging']['output-file']
+        if l_tmp.lower() == 'default':
+            DEBUG_FILE_PATH = copy.copy(l_tmp) if l_tmp != '' else DEBUG_FILE_PATH
 
 def main():
     global BLACK, GREEN
-    global FPS, GAME_OVER, KABALI_FPS, CAPTION, FONT_SIZE
+    global FPS, GAME_OVER, KABALI_FPS, CAPTION, FONT_SIZE, START_TIME
     global PLAYER_NAME
     global g_enemy_health, ENEMY_SHIFT_KP, ENEMY_SHIFT_HD, ENEMY_POSITION, DAMAGE_PUNCHES_KICKS, ENEMY_HEALTH_DEAD, \
         ENEMY_HEALTH_HALF, ENEMY_HEALTH_34
@@ -256,7 +292,7 @@ def main():
     global HADOUKEN_SHIFT
     global BG_FRAMES, BG_FRAMES_COUNT, EN_FRAMES
     global PATH_INTRO, PATH_CREDITS, PATH_BGMUSIC
-    global GAME_LOGGER, DEBUGGING_MOD
+    global GAME_LOGGER, DEBUG_FILE_PATH, DEBUGGING_MOD
 
     background_frame = 0
     paused = False
@@ -265,7 +301,7 @@ def main():
     load_gamedata()
 
     CLOCK = pygame.time.Clock()
-    GAME_LOGGER = Logger('logs')
+    GAME_LOGGER = Logger(DEBUG_FILE_PATH)
     enemy_position = {'x': ENEMY_POSITION.x, 'y': ENEMY_POSITION.y}
     enemy_state = ENLIFE.FULL
     current_state = State.IDLE
@@ -293,19 +329,9 @@ def main():
     credits_clip = VideoFileClip(PATH_CREDITS)
     GAME_LOGGER.log("./Assets/Video files loaded")
 
-    # load background frames
-    # for file in os.listdir('./Assets/Textures/bg_frames'):
-    #     background['img'].append(pygame.image.load('./Assets/Textures/bg_frames/' + file))
-    #     background['rect'].append(background['img'][-1].get_rect())
-
-    # load enemy frames (ordering in en_frames/ paramount)
-    # for file in os.listdir('./Assets/Textures/en_frames'):
-    #     EN_FRAMES[ENLIFE(int(file[1]))] = pygame.image.load('./Assets/Textures/en_frames/' + file)
-    #     EN_FRAMES[ENLIFE(int(file[1])+ 3)] = EN_FRAMES[ENLIFE(int(file[1]))].get_rect()
-
     intro_clip.preview()
     pygame.mixer.music.load(PATH_BGMUSIC)
-    pygame.mixer.music.play(-1, 23.6)
+    pygame.mixer.music.play(-1, START_TIME)
 
     while not GAME_OVER:
         keys = pygame.key.get_pressed()

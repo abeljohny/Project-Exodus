@@ -1,13 +1,23 @@
 import collections
 from pygame.locals import *
 
+# window settings
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 368
 CAPTION = 'Project Exodus'
+
+# game params
+FPS = 12
+KABALI_FPS = 4
+START_TIME = 23.6
+GAME_OVER = False
+
+# font & color params
 FONT_SIZE = 12
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 
+# file paths
 PATH_HADOUKEN = './Assets/Sounds/hadouken.wav'
 PATH_KP1 = './Assets/Sounds/attk1.wav'
 PATH_KP2 = './Assets/Sounds/attk3.wav'
@@ -27,22 +37,22 @@ PATH_FMP = './Assets/Textures/pl_frames/ryu-fmp.png'
 PATH_LMK = './Assets/Textures/pl_frames/ryu-lmk.png'
 PATH_HK = './Assets/Textures/pl_frames/ryu-hk.png'
 
+# frames
 BG_FRAMES = collections.defaultdict(list)
 BG_FRAMES_COUNT = 8
 EN_FRAMES = collections.defaultdict()
 
+# player params
 RYU_WIDTH = 50
 RYU_HEIGHT = 105
 PLAYER_NAME = 'Captain Underpants'
 
-FPS = 12
-KABALI_FPS = 4
-GAME_OVER = False
-
+# positions
 POSITION = collections.namedtuple('POSITION', ['x', 'y'])
 START_POSITION = POSITION(x=50, y=250)
 ENEMY_POSITION = POSITION(x=500, y=215)
 
+# health params
 ENEMY_HEALTH_HALF = 1800
 ENEMY_HEALTH_34 = 2700
 ENEMY_HEALTH_DEAD = 100
@@ -50,9 +60,11 @@ ENEMY_SHIFT_KP = 5
 ENEMY_SHIFT_HD = 10
 g_enemy_health = 5400
 
+# damage params
 DAMAGE_HADOUKEN = 100
 DAMAGE_PUNCHES_KICKS = 30
 
+# frame length buffers
 FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
 FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
 FRAMELENGTH_PROJECTILE = [40]
@@ -68,6 +80,7 @@ FRAMESTART_LMK = [0, 60, 132]
 FRAMELENGTH_HK = [55, 60, 75, 67, 48]
 FRAMESTART_HK = [0, 55, 115, 190, 257]
 
+# frame columns
 COLS_IDLE = 4
 COLS_WALK = 5
 COLS_LP = 3
@@ -80,17 +93,20 @@ COLS_HK = 5
 COLS_HADOUKEN = 5
 COLS_PROJECTILE = 1
 
+# sound vars
 SND_HADOUKEN = None
 SND_KP1 = None
 SND_KP2 = None
 SND_KP3 = None
 
+# control keys
 KEY_HADOUKEN = K_SPACE
 KEY_PUNCH = K_s
 KEY_KICK = K_x
 KEY_PAUSE = K_p
 
+# general vars
+HADOUKEN_SHIFT = False
 GAME_LOGGER = None
 DEBUGGING_MOD = False
-
-HADOUKEN_SHIFT = False
+DEBUG_FILE_PATH = './logs'
