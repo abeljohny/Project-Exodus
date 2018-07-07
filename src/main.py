@@ -1,72 +1,10 @@
 from moviepy.editor import *
 import pygame, sys, time, random, os
-from pygame.locals import *
-import collections
 from enum import Enum, IntEnum
 import copy
-
-WINDOW_WIDTH = 640
-WINDOW_HEIGHT = 368
-WHITE = (255, 255, 255)
-RYU_WIDTH = 50
-RYU_HEIGHT = 105
-
-FPS = 12
-KABALI_FPS = 4
-GAME_OVER = False
-
-POSITION = collections.namedtuple('POSITION', ['x', 'y'])
-START_POSITION = POSITION(x=50, y=250)
-ENEMY_POSITION = POSITION(x=500, y=215)
-
-ENEMY_HEALTH_HALF = 1800
-ENEMY_HEALTH_34 = 2700
-ENEMY_HEALTH_DEAD = 100
-ENEMY_SHIFT_KP = 5
-ENEMY_SHIFT_HD = 10
-g_enemy_health = 5400
-
-DAMAGE_HADOUKEN = 100
-
-FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
-FRAMESTART_HADOUKEN = [0, 60, 130, 200, 298]
-FRAMELENGTH_PROJECTILE = [40]
-FRAMESTART_PROJECTILE = [0]
-FRAMELENGTH_LP = [50, 65, 45]
-FRAMESTART_LP = [0, 50, 115]
-FRAMELENGTH_MHP = [50, 55, 80, 57, 48]
-FRAMESTART_MHP = [0, 50, 105, 185, 242]
-FRAMELENGTH_FMP = [50, 52, 68, 52, 68, 55, 45]
-FRAMESTART_FMP = [0, 50, 102, 170, 222, 290, 345]
-FRAMELENGTH_LMK = [60, 72, 55]
-FRAMESTART_LMK = [0, 60, 132]
-FRAMELENGTH_HK = [55, 60, 75, 67, 48]
-FRAMESTART_HK = [0, 55, 115, 190, 257]
-
-COLS_IDLE = 4
-COLS_WALK = 5
-COLS_LP = 3
-COLS_MHP = 5
-COLS_FLP = 3
-COLS_FMP = 7
-COLS_FHP = 5
-COLS_LMK = 3
-COLS_HK = 5
-COLS_HADOUKEN = 5
-COLS_PROJECTILE = 1
-
-SND_HADOUKEN = None
-SND_KP1 = None
-SND_KP2 = None
-SND_KP3 = None
-
-GAME_LOGGER = None
-g_debugging = False
-
-HADOUKEN_SHIFT = False
-
-GREEN = (0, 255, 0)
-FONT_SIZE = 12
+import json
+import tkinter.messagebox
+from src.consts import *
 
 
 class State(Enum):
@@ -95,7 +33,7 @@ class Logger:
         self.file_handler = open(filename, 'w', encoding="utf8")
 
     def log(self, desc, *args):
-        if g_debugging:
+        if DEBUGGING_MOD:
             self.file_handler.write("{0}".format(desc + ' ' + (''.join(repr(args)) if args else '') + '\n'))
 
     def exit(self):
@@ -177,10 +115,10 @@ class Player:
         self.__position['y'] = position['y']
 
 
-def exit(text, logger=None):
-    if logger and g_debugging:
+def exit(text='', logger=None):
+    if logger and DEBUGGING_MOD:
         logger.log(text)
-    logger.exit()
+        logger.exit()
     pygame.font.quit()
     pygame.mixer.quit()
     pygame.quit()
@@ -189,29 +127,32 @@ def exit(text, logger=None):
 
 def load_sounds():
     global SND_HADOUKEN, SND_KP1, SND_KP2, SND_KP3
-    SND_HADOUKEN = pygame.mixer.Sound("Assets/Sounds/hadouken.wav")
+    SND_HADOUKEN = pygame.mixer.Sound(PATH_HADOUKEN)
     SND_HADOUKEN.set_volume(0.3)
-    SND_KP1 = pygame.mixer.Sound("./Assets/Sounds/attk1.wav")
+    SND_KP1 = pygame.mixer.Sound(PATH_KP1)
     SND_KP1.set_volume(0.3)
-    SND_KP2 = pygame.mixer.Sound("./Assets/Sounds/attk3.wav")
+    SND_KP2 = pygame.mixer.Sound(PATH_KP2)
     SND_KP2.set_volume(0.3)
-    SND_KP3 = pygame.mixer.Sound("./Assets/Sounds/attk11.wav")
+    SND_KP3 = pygame.mixer.Sound(PATH_KP3)
     SND_KP3.set_volume(0.3)
     GAME_LOGGER.log("./Assets/Sounds files loaded")
 
 
 def load_states(player):
-    player.add_state('./Assets/Textures/pl_frames/ryu-idle.png', COLS_IDLE, State.IDLE)
-    player.add_state('./Assets/Textures/pl_frames/ryu-walking.png', COLS_WALK, State.WALKING)
-    player.add_state('./Assets/Textures/pl_frames/ryu-hadouken.png', COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
-    player.add_state('./Assets/Textures/ef_frames/mf-blast.png', COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
-    player.add_state('./Assets/Textures/ef_frames/mf-blast-comp.png', COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
-    player.add_state('./Assets/Textures/pl_frames/ryu-lp.png', COLS_LP, State.PUNCH, FRAMESTART_LP, FRAMELENGTH_LP)
-    player.add_state('./Assets/Textures/pl_frames/ryu-mhp.png', COLS_MHP, State.PUNCH, FRAMESTART_MHP, FRAMELENGTH_MHP)
-    player.add_state('./Assets/Textures/pl_frames/ryu-flp.png', COLS_FLP, State.PUNCH)
-    player.add_state('./Assets/Textures/pl_frames/ryu-fmp.png', COLS_FMP, State.PUNCH, FRAMESTART_FMP, FRAMELENGTH_FMP)
-    player.add_state('./Assets/Textures/pl_frames/ryu-lmk.png', COLS_LMK, State.KICK, FRAMESTART_LMK, FRAMELENGTH_LMK)
-    player.add_state('./Assets/Textures/pl_frames/ryu-hk.png', COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
+    global PATH_IDLE, PATH_WALK, PATH_HADOUKEN, PATH_PROJECTILE, PATH_PROJECTILE_COMP, \
+            PATH_LP, PATH_MHP, PATH_FLP, PATH_FMP, PATH_LMK, PATH_HK
+
+    player.add_state(PATH_IDLE, COLS_IDLE, State.IDLE)
+    player.add_state(PATH_WALK, COLS_WALK, State.WALKING)
+    player.add_state(PATH_HADOUKEN_BLST, COLS_HADOUKEN, State.HADOUKEN, FRAMESTART_HADOUKEN, FRAMELENGTH_HADOUKEN)
+    player.add_state(PATH_PROJECTILE, COLS_PROJECTILE, State.PROJECTILE, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    player.add_state(PATH_PROJECTILE_COMP, COLS_PROJECTILE, State.PROJECTILE_COMP, FRAMESTART_PROJECTILE, FRAMELENGTH_PROJECTILE)
+    player.add_state(PATH_LP, COLS_LP, State.PUNCH, FRAMESTART_LP, FRAMELENGTH_LP)
+    player.add_state(PATH_MHP, COLS_MHP, State.PUNCH, FRAMESTART_MHP, FRAMELENGTH_MHP)
+    player.add_state(PATH_FLP, COLS_FLP, State.PUNCH)
+    player.add_state(PATH_FMP, COLS_FMP, State.PUNCH, FRAMESTART_FMP, FRAMELENGTH_FMP)
+    player.add_state(PATH_LMK, COLS_LMK, State.KICK, FRAMESTART_LMK, FRAMELENGTH_LMK)
+    player.add_state(PATH_HK, COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
 
 
 def load_player_assets(player):
@@ -219,61 +160,151 @@ def load_player_assets(player):
     load_sounds()
 
 
+def load_gamedata():
+    global PATH_KP1, PATH_KP2, PATH_KP3, PATH_HADOUKEN, PATH_BGMUSIC, PATH_INTRO, PATH_CREDITS
+    global BG_FRAMES, EN_FRAMES
+    global CAPTION
+    global PLAYER_NAME
+    global KEY_PAUSE, KEY_KICK, KEY_PUNCH, KEY_HADOUKEN
+    global DEBUGGING_MOD
+
+    l_path = None
+    controls_set = None
+
+    with open('./gamedata.json') as gamedata_json:
+        gamedata = json.load(gamedata_json)
+        #  load sound paths
+        l_path = gamedata['asset directory']['sounds']['punch/kick-miss-1']
+        if l_path.lower() != 'default':
+            PATH_KP1 = copy.copy(l_path)
+        l_path = gamedata['asset directory']['sounds']['punch/kick-miss-2']
+        if l_path.lower() != 'default':
+            PATH_KP2 = copy.copy(l_path)
+        l_path = gamedata['asset directory']['sounds']['punch/kick-hit']
+        if l_path.lower() != 'default':
+            PATH_KP3 = copy.copy(l_path)
+        l_path = gamedata['asset directory']['sounds']['hadouken']
+        if l_path.lower() != 'default':
+            PATH_HADOUKEN = copy.copy(l_path)
+        l_path = gamedata['asset directory']['sounds']['bg-music']
+        if l_path.lower() != 'default':
+            PATH_BGMUSIC = copy.copy(l_path)
+        # load video paths
+        l_path = gamedata['asset directory']['video']['intro']
+        if l_path.lower() != 'default':
+            PATH_INTRO = copy.copy(l_path)
+        l_path = gamedata['asset directory']['video']['credits']
+        if l_path.lower() != 'default':
+            PATH_CREDITS = copy.copy(l_path)
+        # load background frames
+        for i in range(1, 9):
+            l_path = gamedata['asset directory']['textures']['bg-frames']['bg-frames-'+str(i)]
+            if l_path.lower() != 'default':
+                BG_FRAMES['img'].append(pygame.image.load(l_path))
+                BG_FRAMES['rect'].append(BG_FRAMES['img'][-1].get_rect())
+            else:
+                BG_FRAMES['img'].append(pygame.image.load('./Assets/Textures/bg_frames/frame-'+str(i)+'.png'))
+                BG_FRAMES['rect'].append(BG_FRAMES['img'][-1].get_rect())
+        # load enemy frames (ordering in en_frames/ paramount)
+        for i in range(1, 5):
+            l_path = gamedata['asset directory']['textures']['en-frames']['en-frames-'+str(i)]
+            if l_path.lower() != 'default':
+                EN_FRAMES[ENLIFE(i)] = pygame.image.load(l_path)
+                EN_FRAMES[ENLIFE(i + 3)] = EN_FRAMES[ENLIFE(i)].get_rect()
+            else:
+                EN_FRAMES[ENLIFE(i)] = pygame.image.load('./Assets/Textures/en_frames/k'+str(i)+'.png')
+                EN_FRAMES[ENLIFE(i + 3)] = EN_FRAMES[ENLIFE(i)].get_rect()
+        # set control keys
+        l_path = gamedata['controls']['punch']
+        if l_path.lower() != 'default':
+            KEY_PUNCH = copy.copy(ord(l_path))
+        l_path = gamedata['controls']['kick']
+        if l_path.lower() != 'default':
+            KEY_KICK = copy.copy(ord(l_path))
+        l_path = gamedata['controls']['hadouken']
+        if l_path.lower() != 'default':
+            KEY_HADOUKEN = copy.copy(ord(l_path))
+        l_path = gamedata['controls']['pause']
+        if l_path.lower() != 'default':
+            KEY_PAUSE = copy.copy(ord(l_path))
+        # check all keys are unique
+        controls_set = {KEY_PUNCH, KEY_KICK, KEY_HADOUKEN, KEY_PAUSE}
+        if len(controls_set) != 4:
+            tkinter.messagebox.showerror("System Error", "Control Keys must be unique")
+            exit()
+        # set window caption
+        l_path = gamedata['console']['window-title']
+        if l_path.lower() != 'default':
+            CAPTION = copy.copy(l_path)
+        # set player name
+        l_path = gamedata['player']['name']
+        if l_path.lower() != 'default':
+            PLAYER_NAME = copy.copy(l_path)
+        # set debugging mode
+        l_path = gamedata['debugging']
+        if l_path.lower() == "on":
+            DEBUGGING_MOD = True
+
+
 def main():
-    global FPS, GAME_OVER, KABALI_FPS
-    global g_enemy_health, ENEMY_SHIFT_KP, ENEMY_SHIFT_HD, ENEMY_POSITION
+    global BLACK, GREEN
+    global FPS, GAME_OVER, KABALI_FPS, CAPTION, FONT_SIZE
+    global PLAYER_NAME
+    global g_enemy_health, ENEMY_SHIFT_KP, ENEMY_SHIFT_HD, ENEMY_POSITION, DAMAGE_PUNCHES_KICKS, ENEMY_HEALTH_DEAD, \
+        ENEMY_HEALTH_HALF, ENEMY_HEALTH_34
     global SND_KP1, SND_KP2, SND_KP3
     global HADOUKEN_SHIFT
-    global GAME_LOGGER, g_debugging
+    global BG_FRAMES, BG_FRAMES_COUNT, EN_FRAMES
+    global PATH_INTRO, PATH_CREDITS, PATH_BGMUSIC
+    global GAME_LOGGER, DEBUGGING_MOD
 
+    background_frame = 0
     paused = False
     cmd = None
 
+    load_gamedata()
+
     CLOCK = pygame.time.Clock()
-    DAMAGE_PUNCHES_KICKS = 30
-    BACKGROUND_FRAMES = 8
+    GAME_LOGGER = Logger('logs')
     enemy_position = {'x': ENEMY_POSITION.x, 'y': ENEMY_POSITION.y}
+    enemy_state = ENLIFE.FULL
     current_state = State.IDLE
 
-    GAME_LOGGER = Logger('logs')
-    pygame.mixer.pre_init(44100, -16, 2, 2048)
-    pygame.font.init()
-    pygame.mixer.init()
     pygame.init()
+    pygame.mixer.pre_init(44100, -16, 2, 2048)
+    pygame.mixer.init()
+    pygame.font.init()
     font = pygame.font.SysFont('Consolas', FONT_SIZE)
     GAME_LOGGER.log("Pygame Initialization: OK")
+    GAME_LOGGER.log("Pygame Font Initialization (Consolas): OK")
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    display_surface.fill((0, 0, 0))
-    pygame.display.set_caption('Project Exodus')
+    display_surface.fill(BLACK)
+    pygame.display.set_caption(CAPTION)
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
 
     # loading player assets
-    ryu = Player('Ryu')
+    ryu = Player(PLAYER_NAME)
     ryu.position['x'] = START_POSITION.x
     ryu.position['y'] = START_POSITION.y
     load_player_assets(ryu)
     attack_sounds = [SND_KP1, SND_KP2]
     len_sounds = len(attack_sounds)
-    intro_clip = VideoFileClip('./Assets/Video/intro.mp4')
-    credits_clip = VideoFileClip('./Assets/Video/credits.mp4')
+    intro_clip = VideoFileClip(PATH_INTRO)
+    credits_clip = VideoFileClip(PATH_CREDITS)
     GAME_LOGGER.log("./Assets/Video files loaded")
 
     # load background frames
-    background_frame = 0
-    background = collections.defaultdict(list)
-    for file in os.listdir('./Assets/Textures/bg_frames'):
-        background['img'].append(pygame.image.load('./Assets/Textures/bg_frames/' + file))
-        background['rect'].append(background['img'][-1].get_rect())
+    # for file in os.listdir('./Assets/Textures/bg_frames'):
+    #     background['img'].append(pygame.image.load('./Assets/Textures/bg_frames/' + file))
+    #     background['rect'].append(background['img'][-1].get_rect())
 
     # load enemy frames (ordering in en_frames/ paramount)
-    enemy = collections.defaultdict()
-    for file in os.listdir('./Assets/Textures/en_frames'):
-        enemy[ENLIFE(int(file[1]))] = pygame.image.load('./Assets/Textures/en_frames/' + file)
-        enemy[ENLIFE(int(file[1])+ 3)] = enemy[ENLIFE(int(file[1]))].get_rect()
-    enemy_state = ENLIFE.FULL
+    # for file in os.listdir('./Assets/Textures/en_frames'):
+    #     EN_FRAMES[ENLIFE(int(file[1]))] = pygame.image.load('./Assets/Textures/en_frames/' + file)
+    #     EN_FRAMES[ENLIFE(int(file[1])+ 3)] = EN_FRAMES[ENLIFE(int(file[1]))].get_rect()
 
     intro_clip.preview()
-    pygame.mixer.music.load('./Assets/Sounds/main-theme.ogg')
+    pygame.mixer.music.load(PATH_BGMUSIC)
     pygame.mixer.music.play(-1, 23.6)
 
     while not GAME_OVER:
@@ -307,18 +338,18 @@ def main():
             if event.type == KEYUP:
                 current_state = State.IDLE
             elif event.type == KEYDOWN:
-                if event.key == K_SPACE:
+                if event.key == KEY_HADOUKEN:
                     current_state = State.HADOUKEN
-                elif event.key == K_s:
+                elif event.key == KEY_PUNCH:
                     current_state = State.PUNCH
-                elif event.key == K_x:
+                elif event.key == KEY_KICK:
                     current_state = State.KICK
-                elif event.key == K_p:
+                elif event.key == KEY_PAUSE:
                     paused = not paused
                     GAME_LOGGER.log("Paused Status: " + str(paused))
                 elif event.key == pygame.K_h and pygame.key.get_mods() & pygame.KMOD_CTRL and  \
                         pygame.key.get_mods() & pygame.KMOD_SHIFT and not paused:
-                    g_debugging = not g_debugging
+                    DEBUGGING_MOD = not DEBUGGING_MOD
             elif event.type == QUIT:
                 exit("EXIT::Normal Exit", GAME_LOGGER)
 
@@ -348,23 +379,24 @@ def main():
             elif g_enemy_health <= ENEMY_HEALTH_34:
                 enemy_state = ENLIFE.THREE_FOUR
 
-            display_surface.blit(enemy[enemy_state], (enemy_position['x'], enemy_position['y']))
+            display_surface.blit(EN_FRAMES[enemy_state], (enemy_position['x'], enemy_position['y']))
             enemy_position['x'] = ENEMY_POSITION.x
-            if g_debugging:
+            if DEBUGGING_MOD:
                 cmd = "DEBUGGING ON"
                 text_surface = font.render(cmd, False, GREEN)
                 display_surface.blit(text_surface, (0, 0))
             pygame.display.update()
             # draw enemy & background
             if g_enemy_health > 100:
-                display_surface.blit(background['img'][background_frame], background['rect'][background_frame])
+                display_surface.blit(BG_FRAMES['img'][background_frame], BG_FRAMES['rect'][background_frame])
                 background_frame += 1
-                if background_frame >= BACKGROUND_FRAMES:
+                if background_frame >= BG_FRAMES_COUNT:
                     background_frame = 0
             else:
                 FPS = KABALI_FPS
 
             CLOCK.tick(FPS)
+
         else:
             pygame.mixer.music.pause()
             cmd = "PAUSED"

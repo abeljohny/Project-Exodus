@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "description": "Exodus Game Data (untested & raw -- use with caution)",
+  "asset directory": {
+    "sounds": {
+      "description": "use .wav format for effects and .ogg for theme for max compatibility if you're customizing else leave as default",
+      "punch/kick-miss-1": "default",
+      "punch/kick-miss-2": "default",
+      "punch/kick-hit": "default",
+      "hadouken": "default",
+      "bg-music": "default"
+    },
+    "video": {
+      "description": "Intro & Credits file paths. Change to use your own.",
+      "intro": "default",
+      "credits": "default"
+    },
+    "textures": {
+      "bg-frames": {
+        "description": "Background frames (max 8 frames supported)",
+        "bg-frames-1": "default",
+        "bg-frames-2": "default",
+        "bg-frames-3": "default",
+        "bg-frames-4": "default",
+        "bg-frames-5": "default",
+        "bg-frames-6": "default",
+        "bg-frames-7": "default",
+        "bg-frames-8": "default"
+      },
+      "en-frames": {
+        "description": "mofo frames (recommended size: 106 x 144)",
+        "en-frames-1": "default",
+        "en-frames-2": "default",
+        "en-frames-3": "default",
+        "en-frames-4": "default"
+      }
+    }
+  },
+  "player": {
+    "description": "Customize punch/kick/hadouken controls",
+    "name": "default"
+  },
+  "console": {
+    "description": "Console Properties",
+    "window-title": "default"
+  },
+  "controls": {
+    "punch": "default",
+    "kick": "default",
+    "hadouken": "p",
+    "pause": "default"
+  },
+  "debugging": "off"
+}
