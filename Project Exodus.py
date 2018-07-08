@@ -1,11 +1,13 @@
-from moviepy.editor import *
-import pygame, sys, time, random, os
 from enum import Enum, IntEnum
+from consts import *
+import sys
+import random
+import os
 import copy
 import json
 import tkinter.messagebox
-from src.consts import *
-
+import pygame
+import vlc
 
 class State(Enum):
     IDLE = 1
@@ -52,7 +54,6 @@ class Player:
 
     def add_state(self, filename, cols, state, framestart_buffer=None, framelength_buffer=None):
         self.spritesheet = pygame.image.load(filename).convert_alpha()
-        rect = self.spritesheet.get_rect()
         if framelength_buffer is None and framestart_buffer is None:
             for i in range(cols):
                 self.frames[state].append(self.spritesheet.subsurface(pygame.Rect(i * 50, 0, RYU_WIDTH, RYU_HEIGHT)))
@@ -67,13 +68,13 @@ class Player:
 
     def load_state(self, state, surface):
         global SND_HADOUKEN
+
         # start hadouken always from frame #1
         if self.state == State.HADOUKEN and self.current_frame > 0:
             self.state = State.HADOUKEN
             if self.current_frame == len(self.frames[State.HADOUKEN]) - 1:
                 self.projectiles.append(copy.copy(self.__position))
                 SND_HADOUKEN.play()
-
         elif self.state != state:
             self.current_frame = 0
             self.state = state
@@ -86,6 +87,7 @@ class Player:
         global g_enemy_health
         global DAMAGE_HADOUKEN
         global HADOUKEN_SHIFT
+
         frame_length = len(self.frames[state])
         if self.current_frame >= frame_length - 1:
             self.current_frame = 0
@@ -94,7 +96,7 @@ class Player:
         surface.blit(self.frames[state][self.current_frame], (position['x'], position['y']))
         # draw mf blasts
         for indx, pos in enumerate(self.projectiles):
-            if self.projectiles[indx]['x'] > ( ENEMY_POSITION.x - 50 ): # (WINDOW_WIDTH - FRAMELENGTH_PROJECTILE[0]):
+            if self.projectiles[indx]['x'] > (ENEMY_POSITION.x - 50):
                 surface.blit(self.frames[State.PROJECTILE_COMP][0], (ENEMY_POSITION.x - 50, self.__position['y']))
                 del self.projectiles[indx]
                 g_enemy_health -= DAMAGE_HADOUKEN
@@ -130,8 +132,10 @@ def display_error(error_txt, ext=True):
     if ext and response == 'ok':
         exit()
 
+
 def load_sounds():
     global SND_HADOUKEN, SND_KP1, SND_KP2, SND_KP3
+
     SND_HADOUKEN = pygame.mixer.Sound(PATH_HADOUKEN)
     SND_HADOUKEN.set_volume(0.3)
     SND_KP1 = pygame.mixer.Sound(PATH_KP1)
@@ -160,95 +164,94 @@ def load_states(player):
     player.add_state(PATH_HK, COLS_HK, State.KICK, FRAMESTART_HK, FRAMELENGTH_HK)
 
 
-def load_player_assets(player):
-    load_states(player)
-    load_sounds()
-
-
 def load_gamedata():
     global PATH_KP1, PATH_KP2, PATH_KP3, PATH_HADOUKEN, PATH_BGMUSIC, PATH_INTRO, PATH_CREDITS
     global BG_FRAMES, EN_FRAMES
     global CAPTION
     global START_TIME
     global PLAYER_NAME
+    global g_enemy_health, ENEMY_HEALTH_34, ENEMY_HEALTH_HALF, ENEMY_HEALTH_DEAD
     global KEY_PAUSE, KEY_KICK, KEY_PUNCH, KEY_HADOUKEN
     global DEBUGGING_MOD, DEBUG_FILE_PATH
 
-    l_tmp = None
-    controls_set = None
-
     with open('./gamedata.json') as gamedata_json:
         gamedata = json.load(gamedata_json)
+
         #  load sound paths
         l_tmp = gamedata['asset directory']['sounds']['punch/kick-miss-1']
         if l_tmp.lower() != 'default':
             PATH_KP1 = copy.copy(l_tmp) if l_tmp != '' else PATH_KP1
             if not os.path.exists(PATH_KP1):
-                display_error("File path"+PATH_KP1+" does not exist in "
-                                                   "asset directory/sounds/punch/kick-miss-1 (gamedata.json)")
+                display_error('File path ' + PATH_KP1 + ' does not exist in '
+                                                        'asset directory/sounds/punch/kick-miss-1 (gamedata.json)')
         l_tmp = gamedata['asset directory']['sounds']['punch/kick-miss-2']
         if l_tmp.lower() != 'default':
             PATH_KP2 = copy.copy(l_tmp) if l_tmp != '' else PATH_KP2
             if not os.path.exists(PATH_KP2):
-                display_error("File path"+PATH_KP2+" does not exist in "
-                                                   "asset directory/sounds/punch/kick-miss-2 (gamedata.json)")
+                display_error('File path ' + PATH_KP2 + ' does not exist in '
+                                                        'asset directory/sounds/punch/kick-miss-2 (gamedata.json)')
         l_tmp = gamedata['asset directory']['sounds']['punch/kick-hit']
         if l_tmp.lower() != 'default':
             PATH_KP3 = copy.copy(l_tmp) if l_tmp != '' else PATH_KP3
             if not os.path.exists(PATH_KP3):
-                display_error("File path"+PATH_KP3+" does not exist in "
-                                                   "asset directory/sounds/punch/kick-hit (gamedata.json)")
+                display_error('File path ' + PATH_KP3 + ' does not exist in '
+                                                        'asset directory/sounds/punch/kick-hit (gamedata.json)')
         l_tmp = gamedata['asset directory']['sounds']['hadouken']
         if l_tmp.lower() != 'default':
             PATH_HADOUKEN = copy.copy(l_tmp) if l_tmp != '' else PATH_HADOUKEN
             if not os.path.exists(PATH_HADOUKEN):
-                display_error("File path"+PATH_HADOUKEN+" does not exist in "
-                                                        "asset directory/sounds/hadouken (gamedata.json)")
+                display_error('File path ' + PATH_HADOUKEN + ' does not exist in '
+                                                             'asset directory/sounds/hadouken (gamedata.json)')
         l_tmp = gamedata['asset directory']['sounds']['bg-music']
         if l_tmp.lower() != 'default':
             PATH_BGMUSIC = copy.copy(l_tmp) if l_tmp != '' else PATH_BGMUSIC
             if not os.path.exists(PATH_KP1):
-                display_error("File path"+PATH_BGMUSIC+" does not exist!")
+                display_error('File path ' + PATH_BGMUSIC + ' does not exist!')
         l_tmp = gamedata['asset directory']['sounds']['bg-music-start']
         if l_tmp.lower() != 'default':
             START_TIME = copy.copy(int(l_tmp)) if l_tmp != '' else START_TIME
+
         # load video paths
         l_tmp = gamedata['asset directory']['video']['intro']
         if l_tmp.lower() != 'default':
             PATH_INTRO = copy.copy(l_tmp) if l_tmp != '' else PATH_INTRO
             if not os.path.exists(PATH_INTRO):
-                display_error("File path"+PATH_INTRO+" does not exist in "
-                                                     "asset directory/video/intro (gamedata.json)")
+                display_error('File path ' + PATH_INTRO + ' does not exist in '
+                                                          'asset directory/video/intro (gamedata.json)')
         l_tmp = gamedata['asset directory']['video']['credits']
         if l_tmp.lower() != 'default':
             PATH_CREDITS = copy.copy(l_tmp) if l_tmp != '' else PATH_CREDITS
             if not os.path.exists(PATH_KP1):
-                display_error('File path' + PATH_CREDITS + ' does not exist in '
+                display_error('File path ' + PATH_CREDITS + ' does not exist in '
                                                            'asset directory/video/credits (gamedata.json)')
         # load background frames
         for i in range(1, 9):
             l_tmp = gamedata['asset directory']['textures']['bg-frames']['bg-frames-'+str(i)]
-            if not os.path.exists(l_tmp.lower()):
-                display_error('File path' + l_tmp + ' does not exist in asset directory/textures/bg-frames/bg-frames-'
-                              + str(i)+' (gamedata.json)')
             if l_tmp.lower() != 'default':
+                if not os.path.exists(l_tmp.lower()):
+                    display_error(
+                        'File path ' + l_tmp + ' does not exist in asset directory/textures/bg-frames/bg-frames-'
+                        + str(i) + ' (gamedata.json)')
                 BG_FRAMES['img'].append(pygame.image.load(l_tmp))
                 BG_FRAMES['rect'].append(BG_FRAMES['img'][-1].get_rect())
             else:
                 BG_FRAMES['img'].append(pygame.image.load('./Assets/Textures/bg_frames/frame-'+str(i)+'.png'))
                 BG_FRAMES['rect'].append(BG_FRAMES['img'][-1].get_rect())
+
         # load enemy frames (ordering in en_frames/ paramount)
         for i in range(1, 5):
             l_tmp = gamedata['asset directory']['textures']['en-frames']['en-frames-'+str(i)]
-            if not os.path.exists(l_tmp.lower()):
-                display_error('File path' + l_tmp + ' does not exist in asset directory/textures/en-frames/en-frames-'
-                              + str(i) + ' (gamedata.json)')
             if l_tmp.lower() != 'default':
+                if not os.path.exists(l_tmp.lower()):
+                    display_error(
+                        'File path ' + l_tmp + ' does not exist in asset directory/textures/en-frames/en-frames-'
+                        + str(i) + ' (gamedata.json)')
                 EN_FRAMES[ENLIFE(i)] = pygame.image.load(l_tmp)
                 EN_FRAMES[ENLIFE(i + 3)] = EN_FRAMES[ENLIFE(i)].get_rect()
             else:
                 EN_FRAMES[ENLIFE(i)] = pygame.image.load('./Assets/Textures/en_frames/k'+str(i)+'.png')
                 EN_FRAMES[ENLIFE(i + 3)] = EN_FRAMES[ENLIFE(i)].get_rect()
+
         # set control keys
         l_tmp = gamedata['controls']['punch']
         if l_tmp.lower() != 'default':
@@ -262,18 +265,38 @@ def load_gamedata():
         l_tmp = gamedata['controls']['pause']
         if l_tmp.lower() != 'default':
             KEY_PAUSE = copy.copy(ord(l_tmp)) if l_tmp != '' else KEY_PAUSE
+
         # check all keys are unique
         controls_set = {KEY_PUNCH, KEY_KICK, KEY_HADOUKEN, KEY_PAUSE}
         if len(controls_set) != 4:
             display_error("Control Keys must be unique")
+
         # set window caption
         l_tmp = gamedata['console']['window-title']
         if l_tmp.lower() != 'default':
             CAPTION = copy.copy(l_tmp) if l_tmp != '' else CAPTION
+
         # set player name
         l_tmp = gamedata['player']['name']
         if l_tmp.lower() != 'default':
             PLAYER_NAME = copy.copy(l_tmp) if l_tmp != '' else PLAYER_NAME
+
+        # set enemy params
+        l_tmp = gamedata['enemy']['full-health']
+        if l_tmp.lower() != 'default':
+            g_enemy_health = copy.copy(int(l_tmp)) if l_tmp != '' else g_enemy_health
+        l_tmp = gamedata['enemy']['3/4-health']
+        if l_tmp.lower() != 'default':
+            ENEMY_HEALTH_34 = copy.copy(int(l_tmp)) if l_tmp != '' else ENEMY_HEALTH_34
+        l_tmp = gamedata['enemy']['half-health']
+        if l_tmp.lower() != 'default':
+            ENEMY_HEALTH_HALF = copy.copy(int(l_tmp)) if l_tmp != '' else ENEMY_HEALTH_HALF
+        l_tmp = gamedata['enemy']['zero-health']
+        if l_tmp.lower() != 'default':
+            ENEMY_HEALTH_DEAD = copy.copy(int(l_tmp)) if l_tmp != '' else ENEMY_HEALTH_DEAD
+        if not (g_enemy_health > ENEMY_HEALTH_34 and ENEMY_HEALTH_34 > ENEMY_HEALTH_HALF and ENEMY_HEALTH_HALF > ENEMY_HEALTH_DEAD):
+            display_error("Enemy health values incorrect! Must be descending values. (gamedata.json)")
+
         # set debugging mode & file path
         l_tmp = gamedata['debugging']['mode']
         if l_tmp.lower() == "on":
@@ -281,6 +304,9 @@ def load_gamedata():
         l_tmp = gamedata['debugging']['output-file']
         if l_tmp.lower() == 'default':
             DEBUG_FILE_PATH = copy.copy(l_tmp) if l_tmp != '' else DEBUG_FILE_PATH
+            if not os.path.exists(DEBUG_FILE_PATH):
+                display_error('File path ' + DEBUG_FILE_PATH + ' does not exist in debugging/output-file (gamedata.json)')
+
 
 def main():
     global BLACK, GREEN
@@ -292,11 +318,10 @@ def main():
     global HADOUKEN_SHIFT
     global BG_FRAMES, BG_FRAMES_COUNT, EN_FRAMES
     global PATH_INTRO, PATH_CREDITS, PATH_BGMUSIC
-    global GAME_LOGGER, DEBUG_FILE_PATH, DEBUGGING_MOD
+    global GAME_LOGGER, DEBUG_FILE_PATH, DEBUGGING_MOD, PLAYER_ACTIVE
 
     background_frame = 0
     paused = False
-    cmd = None
 
     load_gamedata()
 
@@ -305,31 +330,72 @@ def main():
     enemy_position = {'x': ENEMY_POSITION.x, 'y': ENEMY_POSITION.y}
     enemy_state = ENLIFE.FULL
     current_state = State.IDLE
-
-    pygame.init()
-    pygame.mixer.pre_init(44100, -16, 2, 2048)
+    pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.mixer.init()
     pygame.font.init()
-    font = pygame.font.SysFont('Consolas', FONT_SIZE)
-    GAME_LOGGER.log("Pygame Initialization: OK")
-    GAME_LOGGER.log("Pygame Font Initialization (Consolas): OK")
+    pygame.init()
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     display_surface.fill(BLACK)
     pygame.display.set_caption(CAPTION)
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
+    font = pygame.font.SysFont('Consolas', FONT_SIZE)
+    GAME_LOGGER.log("Pygame Initialization: OK")
+    GAME_LOGGER.log("Pygame Font Initialization (Consolas): OK")
+
+    # load loading splash screen
+    loading_image = pygame.image.load('Assets/Textures/loading.png')
+
+    # create vlc instance & player for playing intro
+    vlcInstance = vlc.Instance()
+    media_intro = vlcInstance.media_new(PATH_INTRO)
+    player_intro = vlcInstance.media_player_new()
+    player_intro.set_hwnd(pygame.display.get_wm_info()['window'])
+    player_intro.set_media(media_intro)
+    pygame.mixer.quit()
+    player_intro.play()
+
+    while PLAYER_ACTIVE:
+        if player_intro.get_state() == vlc.State.Ended:
+            PLAYER_ACTIVE = False
+        else:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    player_intro.stop()
+                    player_intro.release()
+                    vlcInstance.release()
+                    exit("EXIT::INTRO_CLIP", GAME_LOGGER)
+                elif event.type == pygame.KEYDOWN and event.key == KEY_ENTER:
+                    PLAYER_ACTIVE = False
+
+    player_intro.video_set_mouse_input(False)
+    player_intro.video_set_key_input(False)
+    player_intro.stop()
+    player_intro.release()
+
+    # display loading screen
+    display_surface.blit(loading_image, [0, 0])
+    pygame.display.update()
+
+    # load credits clip
+    media_credits = vlcInstance.media_new(PATH_CREDITS)
+    player_credits = vlcInstance.media_player_new()
+    player_credits.set_hwnd(pygame.display.get_wm_info()['window'])
+    player_credits.set_media(media_credits)
 
     # loading player assets
     ryu = Player(PLAYER_NAME)
     ryu.position['x'] = START_POSITION.x
     ryu.position['y'] = START_POSITION.y
-    load_player_assets(ryu)
+    load_states(ryu)
+
+    # loading player sounds
+    pygame.mixer.pre_init(44100, -16, 2, 512)
+    pygame.mixer.init()
+    load_sounds()
     attack_sounds = [SND_KP1, SND_KP2]
     len_sounds = len(attack_sounds)
-    intro_clip = VideoFileClip(PATH_INTRO)
-    credits_clip = VideoFileClip(PATH_CREDITS)
     GAME_LOGGER.log("./Assets/Video files loaded")
 
-    intro_clip.preview()
     pygame.mixer.music.load(PATH_BGMUSIC)
     pygame.mixer.music.play(-1, START_TIME)
 
@@ -407,13 +473,16 @@ def main():
 
             display_surface.blit(EN_FRAMES[enemy_state], (enemy_position['x'], enemy_position['y']))
             enemy_position['x'] = ENEMY_POSITION.x
+
             if DEBUGGING_MOD:
                 cmd = "DEBUGGING ON"
                 text_surface = font.render(cmd, False, GREEN)
                 display_surface.blit(text_surface, (0, 0))
+
             pygame.display.update()
+
             # draw enemy & background
-            if g_enemy_health > 100:
+            if g_enemy_health > ENEMY_HEALTH_DEAD:
                 display_surface.blit(BG_FRAMES['img'][background_frame], BG_FRAMES['rect'][background_frame])
                 background_frame += 1
                 if background_frame >= BG_FRAMES_COUNT:
@@ -441,7 +510,24 @@ def main():
             elif event.type == QUIT:
                 exit("EXIT::Normal Exit", GAME_LOGGER)
 
-        credits_clip.preview()
+        PLAYER_ACTIVE = True
+        pygame.mixer.quit()
+        player_credits.play()
+
+        while PLAYER_ACTIVE:
+            if player_credits.get_state() == vlc.State.Ended:
+                PLAYER_ACTIVE = False
+            else:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        player_credits.stop()
+                        player_credits.release()
+                        vlcInstance.release()
+                        exit("EXIT::CREDITS_CLIP", GAME_LOGGER)
+
+        player_credits.stop()
+        player_credits.release()
+        vlcInstance.release()
         exit("EXIT::EOP", GAME_LOGGER)
 
         CLOCK.tick(FPS)

@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "description": "Exodus Game Data [untested & raw (use 'default' to fallback to default settings)]",
+  "version": "1.0.3",
+  "description": "Exodus Game Data [ENCLOSE ALL VALUES IN QUOTES. CHANGE WITH CAUTION (use 'default' to fallback to default settings)]",
   "asset directory": {
     "sounds": {
       "description": "Customize sound effects (use .wav format for effects and .ogg for theme for max compatibility)",
@@ -40,6 +40,13 @@
   "player": {
     "description": "Future use",
     "name": "default"
+  },
+  "enemy": {
+    "description": "Customize enemy health values",
+    "full-health": "default",
+    "3/4-health": "default",
+    "half-health": "default",
+    "zero-health": "default"
   },
   "console": {
     "description": "Customize Console Properties",
