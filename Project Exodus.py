@@ -167,7 +167,7 @@ def load_states(player):
 def load_gamedata():
     global PATH_KP1, PATH_KP2, PATH_KP3, PATH_HADOUKEN, PATH_BGMUSIC, PATH_INTRO, PATH_CREDITS
     global BG_FRAMES, EN_FRAMES
-    global CAPTION
+    global WIN_CAPTION, WIN_ICON
     global START_TIME
     global PLAYER_NAME
     global g_enemy_health, ENEMY_HEALTH_34, ENEMY_HEALTH_HALF, ENEMY_HEALTH_DEAD
@@ -271,10 +271,13 @@ def load_gamedata():
         if len(controls_set) != 4:
             display_error("Control Keys must be unique")
 
-        # set window caption
+        # set window caption & icon
         l_tmp = gamedata['console']['window-title']
         if l_tmp.lower() != 'default':
-            CAPTION = copy.copy(l_tmp) if l_tmp != '' else CAPTION
+            WIN_CAPTION = copy.copy(l_tmp) if l_tmp != '' else WIN_CAPTION
+        l_tmp = gamedata['console']['window-icon']
+        if l_tmp.lower() != 'default':
+            WIN_ICON = copy.copy(l_tmp) if l_tmp != '' else WIN_ICON
 
         # set player name
         l_tmp = gamedata['player']['name']
@@ -302,7 +305,7 @@ def load_gamedata():
         if l_tmp.lower() == "on":
             DEBUGGING_MOD = True
         l_tmp = gamedata['debugging']['output-file']
-        if l_tmp.lower() == 'default':
+        if l_tmp.lower() != 'default':
             DEBUG_FILE_PATH = copy.copy(l_tmp) if l_tmp != '' else DEBUG_FILE_PATH
             if not os.path.exists(DEBUG_FILE_PATH):
                 display_error('File path ' + DEBUG_FILE_PATH + ' does not exist in debugging/output-file (gamedata.json)')
@@ -310,7 +313,7 @@ def load_gamedata():
 
 def main():
     global BLACK, GREEN
-    global FPS, GAME_OVER, KABALI_FPS, CAPTION, FONT_SIZE, START_TIME
+    global FPS, GAME_OVER, KABALI_FPS, WIN_CAPTION, FONT_SIZE, START_TIME
     global PLAYER_NAME
     global g_enemy_health, ENEMY_SHIFT_KP, ENEMY_SHIFT_HD, ENEMY_POSITION, DAMAGE_PUNCHES_KICKS, ENEMY_HEALTH_DEAD, \
         ENEMY_HEALTH_HALF, ENEMY_HEALTH_34
@@ -334,16 +337,18 @@ def main():
     pygame.mixer.init()
     pygame.font.init()
     pygame.init()
+    app_icon = pygame.image.load('./Assets/Textures/icon32.ico')
+    pygame.display.set_icon(app_icon)
     display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     display_surface.fill(BLACK)
-    pygame.display.set_caption(CAPTION)
+    pygame.display.set_caption(WIN_CAPTION)
     GAME_LOGGER.log("Display Surface Initialization: OK", WINDOW_WIDTH, WINDOW_HEIGHT)
     font = pygame.font.SysFont('Consolas', FONT_SIZE)
     GAME_LOGGER.log("Pygame Initialization: OK")
     GAME_LOGGER.log("Pygame Font Initialization (Consolas): OK")
 
-    # load loading splash screen
-    loading_image = pygame.image.load('Assets/Textures/loading.png')
+    # load splash screen
+    loading_image = pygame.image.load(WIN_ICON_PATH)
 
     # create vlc instance & player for playing intro
     vlcInstance = vlc.Instance()

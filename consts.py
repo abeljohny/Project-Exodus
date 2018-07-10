@@ -4,7 +4,8 @@ from pygame.locals import *
 # window settings
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 368
-CAPTION = 'Project Exodus'
+WIN_CAPTION = 'Project Exodus'
+WIN_ICON_PATH = './Assets/Textures/loading.png'
 
 # game params
 FPS = 15

@@ -50,7 +50,8 @@
   },
   "console": {
     "description": "Customize Console Properties",
-    "window-title": "default"
+    "window-title": "default",
+    "window-icon": "default"
   },
   "controls": {
     "description": "Customize control keys",
