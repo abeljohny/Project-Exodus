@@ -1,11 +1,10 @@
 import collections
 from pygame.locals import *
 
-# window settings
+# window consts
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 368
 WIN_CAPTION = 'Project Exodus'
-WIN_ICON_PATH = './Assets/Textures/loading.png'
 
 # game params
 FPS = 15
@@ -18,12 +17,15 @@ PLAYER_ACTIVE = True
 FONT_SIZE = 12
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
+RED = (255, 0, 0)
 
 # file paths
 PATH_HADOUKEN = './Assets/Sounds/hadouken.wav'
 PATH_KP1 = './Assets/Sounds/attk1.wav'
 PATH_KP2 = './Assets/Sounds/attk3.wav'
 PATH_KP3 = './Assets/Sounds/attk11.wav'
+PATH_FIGHT = './Assets/Sounds/fight-6.wav'
+PATH_FINISHER = './Assets/Sounds/fight-7.wav'
 PATH_BGMUSIC = './Assets/Sounds/main-theme.ogg'
 PATH_INTRO = './Assets/Video/intro.mp4'
 PATH_CREDITS = './Assets/Video/credits.mp4'
@@ -38,6 +40,10 @@ PATH_FLP = './Assets/Textures/pl_frames/ryu-flp.png'
 PATH_FMP = './Assets/Textures/pl_frames/ryu-fmp.png'
 PATH_LMK = './Assets/Textures/pl_frames/ryu-lmk.png'
 PATH_HK = './Assets/Textures/pl_frames/ryu-hk.png'
+PATH_WIN_ICON = './Assets/Textures/icon32.ico'
+PATH_LOADING_SCREEN = './Assets/Textures/loading.png'
+PATH_GAMEDATA = './gamedata.json'
+PATH_DEBUG_FILE = './logs'
 
 # frames
 BG_FRAMES = collections.defaultdict(list)
@@ -53,18 +59,19 @@ PLAYER_NAME = 'Captain Underpants'
 POSITION = collections.namedtuple('POSITION', ['x', 'y'])
 START_POSITION = POSITION(x=50, y=250)
 ENEMY_POSITION = POSITION(x=500, y=215)
+GSTATE_TXT_POSITION = POSITION(x=180, y=95)
 
 # health params
-g_enemy_health = 50800
-ENEMY_HEALTH_34 = 45300
+g_enemy_health = 40800
+ENEMY_HEALTH_34 = 35300
 ENEMY_HEALTH_HALF = 20200
-ENEMY_HEALTH_DEAD = 1000
+ENEMY_HEALTH_DEAD = 4000
 ENEMY_SHIFT_KP = 5
 ENEMY_SHIFT_HD = 10
 
 # damage params
-DAMAGE_HADOUKEN = 100
-DAMAGE_PUNCHES_KICKS = 30
+DAMAGE_HADOUKEN = 200
+DAMAGE_PUNCHES_KICKS = 60
 
 # frame length buffers
 FRAMELENGTH_HADOUKEN = [60, 70, 70, 98, 70]
@@ -100,6 +107,8 @@ SND_HADOUKEN = None
 SND_KP1 = None
 SND_KP2 = None
 SND_KP3 = None
+SND_FIGHT = None
+SND_FINISHER = None
 
 # control keys
 KEY_HADOUKEN = K_SPACE
@@ -107,9 +116,10 @@ KEY_PUNCH = K_s
 KEY_KICK = K_x
 KEY_PAUSE = K_p
 KEY_ENTER = K_RETURN
+KEY_RIGHT = K_d
+KEY_LEFT = K_a
 
 # general vars
 HADOUKEN_SHIFT = False
 GAME_LOGGER = None
 DEBUGGING_MOD = False
-DEBUG_FILE_PATH = './logs'

@@ -38,8 +38,16 @@
     }
   },
   "player": {
-    "description": "Future use",
-    "name": "default"
+    "description": "Customize player controls",
+    "name": "default",
+    "controls": {
+      "description": "Customize player controls",
+      "move-right": "default",
+      "move-left": "default",
+      "punch": "default",
+      "kick": "default",
+      "hadouken": "default"
+    }
   },
   "enemy": {
     "description": "Customize enemy health values",
@@ -51,17 +59,16 @@
   "console": {
     "description": "Customize Console Properties",
     "window-title": "default",
-    "window-icon": "default"
-  },
-  "controls": {
-    "description": "Customize control keys",
-    "punch": "default",
-    "kick": "default",
-    "hadouken": "default",
-    "pause": "default"
+    "loading-screen": "default",
+    "window-icon": "default",
+    "controls": {
+      "description": "Customize console controls",
+      "pause": "default"
+    }
   },
   "debugging": {
+    "description": "Press CTRL-0 to start recording",
     "mode": "off",
-    "output-file": "default"
+    "output-file": "./logs2"
   }
 }
