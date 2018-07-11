@@ -286,7 +286,7 @@ def load_gamedata():
                 KEY_PAUSE = copy.copy(ord(l_tmp)) if l_tmp != '' else KEY_PAUSE
 
             # check all keys are unique
-            controls_set = {KEY_PUNCH, KEY_KICK, KEY_HADOUKEN, KEY_PAUSE}
+            controls_set = {KEY_PUNCH, KEY_KICK, KEY_HADOUKEN, KEY_PAUSE, KEY_LEFT, KEY_RIGHT}
             if len(controls_set) != 4:
                 display_error("Control Keys must be unique")
 
@@ -331,10 +331,10 @@ def load_gamedata():
                 display_error("Enemy health values incorrect! Must be descending values. (gamedata.json)")
 
             # set debugging mode & file path
-            l_tmp = gamedata['debugging']['mode']
+            l_tmp = gamedata['console']['debugging']['mode']
             if l_tmp.lower() == "on":
                 DEBUGGING_MOD = True
-            l_tmp = gamedata['debugging']['output-file']
+            l_tmp = gamedata['console']['debugging']['output-file']
             if l_tmp.lower() != 'default':
                 PATH_DEBUG_FILE = copy.copy(l_tmp) if l_tmp != '' else PATH_DEBUG_FILE
 

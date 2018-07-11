@@ -23,7 +23,8 @@ cx_Freeze.setup(
     options={
         "build_exe": {
              "includes": ["numpy.core._methods", "numpy.lib.format", "idna.idnadata"],
-             "include_files": ["Assets", "tcl86t.dll", "tk86t.dll", "gamedata.json", "LICENSE", "README.md"]
+             "include_files": ["Assets", "tcl86t.dll", "tk86t.dll", "gamedata.json",
+                               "LICENSE", "README.md", "Customization Assets (Sample)"]
         }
     },
     executables=executables

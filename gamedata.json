@@ -1,9 +1,9 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Exodus Game Data [ENCLOSE ALL VALUES IN QUOTES. CHANGE WITH CAUTION (use 'default' to fallback to default settings)]",
   "asset directory": {
     "sounds": {
-      "description": "Customize sound effects (use .wav format for effects and .ogg for theme for max compatibility)",
+      "description": "Customize sound effects (use .wav format for effects and .ogg for background music for max compatibility)",
       "punch/kick-miss-1": "default",
       "punch/kick-miss-2": "default",
       "punch/kick-hit": "default",
@@ -41,7 +41,7 @@
     "description": "Customize player controls",
     "name": "default",
     "controls": {
-      "description": "Customize player controls",
+      "description": "Customize player controls (arrow keys mapped by default)",
       "move-right": "default",
       "move-left": "default",
       "punch": "default",
@@ -54,21 +54,24 @@
     "full-health": "default",
     "3/4-health": "default",
     "half-health": "default",
-    "zero-health": "default"
+    "zero-health": "default",
+    "controls": {
+      "description": "You don't have any controls mofo! STFU!"
+    }
   },
   "console": {
-    "description": "Customize Console Properties",
+    "description": "Customize Console Properties (window-icon recommended size: 32x32)",
     "window-title": "default",
     "loading-screen": "default",
     "window-icon": "default",
     "controls": {
       "description": "Customize console controls",
       "pause": "default"
+    },
+    "debugging": {
+      "description": "Press CTRL-0 to start recording",
+      "mode": "off",
+      "output-file": "default"
     }
-  },
-  "debugging": {
-    "description": "Press CTRL-0 to start recording",
-    "mode": "off",
-    "output-file": "./logs2"
   }
 }
