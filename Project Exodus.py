@@ -287,7 +287,7 @@ def load_gamedata():
 
             # check all keys are unique
             controls_set = {KEY_PUNCH, KEY_KICK, KEY_HADOUKEN, KEY_PAUSE, KEY_LEFT, KEY_RIGHT}
-            if len(controls_set) != 4:
+            if len(controls_set) != 6:
                 display_error("Control Keys must be unique")
 
             # set window title
