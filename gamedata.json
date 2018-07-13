@@ -51,10 +51,10 @@
   },
   "enemy": {
     "description": "Customize enemy health values",
-    "full-health": "1000",
-    "3/4-health": "800",
-    "half-health": "600",
-    "zero-health": "500",
+    "full-health": "default",
+    "3/4-health": "default",
+    "half-health": "default",
+    "zero-health": "default",
     "controls": {
       "description": "You don't have any controls mofo! STFU!"
     }

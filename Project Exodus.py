@@ -3,6 +3,7 @@ from consts import *
 import sys
 import time
 import random
+import itertools
 import os
 import copy
 import json
@@ -434,6 +435,9 @@ def main():
     ryu.position['y'] = START_POSITION.y
     load_states(ryu)
 
+    # loading enemy position
+    en_pos = itertools.cycle([ENEMY_POSITION.x, enemy_position['x'] + ENEMY_SHIFT_KP])
+
     # loading player sounds
     pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.mixer.init()
@@ -499,7 +503,8 @@ def main():
             pygame.mixer.music.unpause()
             if current_state == PlayerState.KICK or current_state == PlayerState.PUNCH:
                 if ryu.position['x'] == (ENEMY_POSITION.x - 50):
-                    enemy_position['x'] += ENEMY_SHIFT_KP
+                    enemy_position['x']  = en_pos.__next__()
+                    print(enemy_position['x'])
                     g_enemy_health -= DAMAGE_PUNCHES_KICKS
                     SND_KP3.play()
                     GAME_LOGGER.log("State.KICK / State.PUNCH::ENEMY_POSITION: " + repr(enemy_position))
@@ -526,6 +531,7 @@ def main():
 
             display_surface.blit(EN_FRAMES[enemy_state], (enemy_position['x'], enemy_position['y']))
             enemy_position['x'] = ENEMY_POSITION.x
+
             elasped_time = time.time() - start_time
             if game_state == GameState.INITIAL and elasped_time < 1:
                 display_surface.blit(fight_text, (GSTATE_TXT_POSITION.x, GSTATE_TXT_POSITION.y))
